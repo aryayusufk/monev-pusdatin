@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,11 +16,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Jalankan seeder dasar
+        $this->call([
+            RolesTableSeeder::class,
+            BidangSeeder::class,
         ]);
+
+        // (Opsional) Buat 1 akun admin untuk login awal
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+
+        // Assign role super_admin ke akun ini
+        $roleId = \DB::table('roles')->where('name', 'super_admin')->value('id');
+        if ($roleId && !$admin->roles()->where('role_id', $roleId)->exists()) {
+            $admin->roles()->attach($roleId);
+        }
+
+        // (Opsional) Factory user tambahan untuk testing
+        // User::factory(5)->create();
     }
 }
