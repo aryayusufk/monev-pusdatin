@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
 
         // (Opsional) Buat 1 akun admin untuk login awal
         $admin = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+            ['username' => 'superadmin1'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
