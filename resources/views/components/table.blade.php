@@ -22,7 +22,7 @@
         </table>
 
         <!-- Table Body -->
-        <div class="max-h-[240px] overflow-y-auto">
+        <div class="max-h-[183.33px] overflow-y-auto">
             <table class="table-fixed w-full">
                 <tbody>
                     <tr class="flex flex-row flex-1 p-4 gap-4 border-b border-bor-base-default">
