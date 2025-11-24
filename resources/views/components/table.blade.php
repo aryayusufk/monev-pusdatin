@@ -4,7 +4,7 @@
 ])
 
 <div class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm h-full min-h-0">
-    <div class="flex flex-col sm:flex-row px-4 pt-2 pb-1">
+    <div class="flex flex-col px-4 pt-2 pb-1">
         <p class="text-sm font-normal text-txt-base-secondary">{{ $subheading }}</p>
         <h1 class="text-base font-semibold text-acc-base-default">{{ $heading }}</h1>
     </div>
