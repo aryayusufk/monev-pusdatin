@@ -3,13 +3,13 @@
   'heading' => 'Heading',
 ])
 
-<div class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm">
-    <div class="flex flex-col px-4 pt-2 pb-1">
+<div class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm h-full min-h-0">
+    <div class="flex flex-col sm:flex-row px-4 pt-2 pb-1">
         <p class="text-sm font-normal text-txt-base-secondary">{{ $subheading }}</p>
         <h1 class="text-base font-semibold text-acc-base-default">{{ $heading }}</h1>
     </div>
 
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col flex-1 gap-2 min-h-0">
         <!-- Table Header -->
         <table class="table-fixed w-full">
             <thead>
@@ -22,7 +22,7 @@
         </table>
 
         <!-- Table Body -->
-        <div class="max-h-[183.33px] overflow-y-auto">
+        <div class="flex-1 min-h-0 overflow-y-auto">
             <table class="table-fixed w-full">
                 <tbody>
                     <tr class="flex flex-row flex-1 p-4 gap-4 border-b border-bor-base-default">
