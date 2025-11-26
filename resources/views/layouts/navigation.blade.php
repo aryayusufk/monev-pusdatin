@@ -13,10 +13,10 @@
                 <!-- Navigation Links -->
                 <div class="flex flex-col gap-2">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                        {{ __('Konfigurasi') }}
                     </x-nav-link>
-                    <x-nav-link href="#" :active="false">
-                        Buat Laporan
+                    <x-nav-link :href="route('create-report')" :active="request()->routeIs('create-report')">
+                        {{ __('Buat Laporan') }}
                     </x-nav-link>
                     <x-nav-link href="#" :active="false">
                         Laporan Bidang
