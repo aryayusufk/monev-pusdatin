@@ -15,8 +15,8 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Konfigurasi') }}
                     </x-nav-link>
-                    <x-nav-link href="#" :active="false">
-                        Buat Laporan
+                    <x-nav-link :href="route('create-report')" :active="request()->routeIs('create-report')">
+                        {{ __('Buat Laporan') }}
                     </x-nav-link>
                     <x-nav-link href="#" :active="false">
                         Laporan Bidang
