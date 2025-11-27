@@ -1,1 +1,1 @@
-<img src="img\Seal_of_the_Ministry_of_Foreign_Affairs_of_the_Republic_of_Indonesia_(2023_rev).svg" alt="Logo" {{ $attributes }}>
+<img src="{{ asset('img\Seal_of_the_Ministry_of_Foreign_Affairs_of_the_Republic_of_Indonesia_(2023_rev).svg') }}" alt="Logo" {{ $attributes }}>

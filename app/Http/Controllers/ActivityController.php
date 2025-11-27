@@ -71,7 +71,7 @@ class ActivityController extends Controller
         $ikus    = $ikusQuery->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
-        return view('activities.create', compact('ikus','bidangs','user'));
+        return view('activities.create-report', compact('ikus','bidangs','user'));
     }
 
     public function store(StoreActivityRequest $request)
@@ -136,7 +136,7 @@ class ActivityController extends Controller
 
         $activity->load('ikus');
 
-        return view('activities.edit', compact('activity','ikus','bidangs','user'));
+        return view('activities.edit-report', compact('activity','ikus','bidangs','user'));
     }
 
     public function update(UpdateActivityRequest $request, Activity $activity)
