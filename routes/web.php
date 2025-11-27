@@ -10,7 +10,7 @@ use App\Http\Controllers\BidangController; // <--- TAMBAHAN PENTING
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 // Dashboard bawaan Breeze
