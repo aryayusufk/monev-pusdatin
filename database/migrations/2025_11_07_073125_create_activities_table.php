@@ -1,51 +1,65 @@
 <?php
-// database/migrations/2025_01_01_000200_create_activities_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
-    public function up(): void {
-        Schema::create('activities', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('bidang_id')->constrained('bidangs')->cascadeOnDelete();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+    public function up(): void
+    {
+        Schema::create('activities', function (Blueprint $t) {
+            $t->id();
 
-            $table->string('judul');
-            $table->text('deskripsi')->nullable();
-            $table->date('occurred_at'); // tanggal kegiatan terjadi (acuan periode)
-            $table->string('lokasi')->nullable();
+            // konteks organisasi & pembuat
+            $t->foreignId('bidang_id')->constrained('bidangs')->cascadeOnDelete();
+            $t->foreignId('created_by')->constrained('users')->cascadeOnDelete();
 
-            // Denormalized period fields for grouping & reporting
-            $table->integer('year');        // ex: 2025
-            $table->tinyInteger('iso_week'); // 1-53 (ISO week)
-            $table->tinyInteger('month');    // 1-12
-            $table->tinyInteger('quarter');  // 1-4
+            // tanggal & periodisasi
+            $t->date('occurred_at');
+            $t->integer('year');          // contoh: 2025
+            $t->tinyInteger('month');     // 1..12
+            $t->tinyInteger('quarter');   // 1..4
+            $t->integer('iso_week');      // 1..53
 
-            // Status siklus laporan
-            $table->enum('status', ['draft','submitted','reviewed','approved','rejected'])->default('draft');
+            // ====== ISI LAPORAN (tambahan yang kamu minta) ======
+            $t->longText('kegiatan')->nullable();
+            $t->longText('tindak_lanjut')->nullable();
+            $t->longText('kendala')->nullable();
+            $t->longText('percepatan')->nullable();
+            $t->longText('proyeksi_kedepan')->nullable();
 
-            // Khusus penyortiran triwulan (dipilih manual oleh role terkait)
-            $table->boolean('is_selected_quarterly')->default(false);
-            $table->enum('selected_quarterly_scope', ['bidang','global'])->nullable();
-            $table->foreignId('selected_quarterly_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestampTz('selected_quarterly_at')->nullable();
+            // status siklus & seleksi triwulan
+            $t->enum('status', ['draft','submitted','archived'])->default('submitted');
+            $t->boolean('is_selected_quarterly')->default(false);
+            $t->enum('selected_quarterly_scope', ['bidang','global'])->nullable();
+            $t->foreignId('selected_quarterly_by')->nullable()->constrained('users')->nullOnDelete();
+            $t->timestampTz('selected_quarterly_at')->nullable();
 
-            $table->jsonb('extra')->nullable(); // ruang fleksibel: KPI nilai, narasi tambahan, dsb.
+            // metadata bebas kalau perlu
+            $t->jsonb('metadata')->nullable();
 
-            $table->timestamps();
-            $table->softDeletes();
+            $t->timestamps();
+            $t->softDeletes();
 
-            $table->index(['bidang_id','year']);
-            $table->index(['year','iso_week']);
-            $table->index(['year','month']);
-            $table->index(['year','quarter']);
-            $table->index(['status']);
-            $table->index(['is_selected_quarterly','selected_quarterly_scope']);
+            // index umum
+            $t->index(['year','month']);
+            $t->index(['year','quarter']);
+            $t->index(['year','iso_week']);
+            $t->index(['bidang_id','occurred_at']);
+
+            // index untuk query triwulan terpilih
+            $t->index(['is_selected_quarterly','year','quarter','bidang_id'], 'activities_quarterly_idx');
         });
+
+        // CHECK constraints (PostgreSQL)
+        DB::statement("ALTER TABLE activities ADD CONSTRAINT chk_act_month   CHECK (month BETWEEN 1 AND 12)");
+        DB::statement("ALTER TABLE activities ADD CONSTRAINT chk_act_quarter CHECK (quarter BETWEEN 1 AND 4)");
+        DB::statement("ALTER TABLE activities ADD CONSTRAINT chk_act_week    CHECK (iso_week BETWEEN 1 AND 53)");
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::dropIfExists('activities');
     }
 };

@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,9 +19,12 @@ class DatabaseSeeder extends Seeder
     {
         // Jalankan seeder dasar
         $this->call([
-            RolesTableSeeder::class,
-            BidangSeeder::class,
-        ]);
+        RolesTableSeeder::class,
+        //BidangSeeder::class,
+        //IkuSeeder::class,
+        //IkuBidangSeeder::class,
+        UsersSeeder::class,
+    ]);
 
         // (Opsional) Buat 1 akun admin untuk login awal
         $admin = User::firstOrCreate(
@@ -33,7 +37,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // Assign role super_admin ke akun ini
-        $roleId = \DB::table('roles')->where('name', 'super_admin')->value('id');
+        $roleId = DB::table('roles')->where('name', 'super_admin')->value('id');
         if ($roleId && !$admin->roles()->where('role_id', $roleId)->exists()) {
             $admin->roles()->attach($roleId);
         }
