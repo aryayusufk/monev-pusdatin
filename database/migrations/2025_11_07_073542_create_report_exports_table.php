@@ -1,40 +1,56 @@
 <?php
-// database/migrations/2025_01_01_000410_create_report_exports_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
-    public function up(): void {
-        Schema::create('report_exports', function (Blueprint $table) {
-            $table->id();
-            $table->enum('period_type', ['weekly','monthly','quarterly','yearly']);
-            $table->integer('year');
-            $table->tinyInteger('iso_week')->nullable();
-            $table->tinyInteger('month')->nullable();
-            $table->tinyInteger('quarter')->nullable();
+    public function up(): void
+    {
+        Schema::create('report_exports', function (Blueprint $t) {
+            $t->id();
 
-            $table->enum('scope', ['bidang','global'])->default('bidang');
-            $table->foreignId('bidang_id')->nullable()->constrained('bidangs')->nullOnDelete();
+            // Identitas periode & ruang lingkup
+            $t->enum('period_type', ['weekly','monthly','quarterly','yearly']);
+            $t->enum('scope', ['bidang','global']);
+            $t->integer('year');
+            $t->tinyInteger('month')->nullable();    // untuk monthly
+            $t->tinyInteger('quarter')->nullable();  // untuk quarterly
+            $t->integer('iso_week')->nullable();     // untuk weekly
 
-            $table->foreignId('generated_by')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('template_id')->nullable()->constrained('export_templates')->nullOnDelete();
+            // jika scope = bidang, isi bidang_id; kalau global -> null
+            $t->foreignId('bidang_id')->nullable()->constrained('bidangs')->nullOnDelete();
 
-            $table->string('disk')->default('public');
-            $table->string('path'); // path file hasil export
-            $table->timestampTz('generated_at');
+            // template yang digunakan
+            $t->foreignId('template_id')->constrained('export_templates')->cascadeOnDelete();
 
-            $table->jsonb('parameters')->nullable(); // filter/opsi yang dipakai saat generate
+            // siapa yang generate (nullable: tetap simpan arsip meski user dihapus)
+            $t->foreignId('generated_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->timestamps();
-            $table->softDeletes();
+            $t->string('path');           // path file hasil ekspor
+            $t->jsonb('params')->nullable();  // parameter yang dipakai saat render
+            $t->timestampTz('generated_at')->useCurrent();
 
-            $table->index(['period_type','year','iso_week','month','quarter']);
-            $table->index(['scope','bidang_id']);
+            $t->timestamps();
+            $t->softDeletes();
+
+            // indeks umum untuk pencarian cepat
+            $t->index(['period_type','year']);
+            $t->index(['period_type','year','quarter']);
+            $t->index(['period_type','year','month']);
+            $t->index(['period_type','year','iso_week']);
+            $t->index(['scope','bidang_id']);
         });
+
+        // CHECK constraints (PostgreSQL)
+        DB::statement("ALTER TABLE report_exports ADD CONSTRAINT chk_re_month   CHECK (month IS NULL OR month BETWEEN 1 AND 12)");
+        DB::statement("ALTER TABLE report_exports ADD CONSTRAINT chk_re_quarter CHECK (quarter IS NULL OR quarter BETWEEN 1 AND 4)");
+        DB::statement("ALTER TABLE report_exports ADD CONSTRAINT chk_re_week    CHECK (iso_week IS NULL OR iso_week BETWEEN 1 AND 53)");
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::dropIfExists('report_exports');
     }
 };
