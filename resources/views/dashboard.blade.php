@@ -26,7 +26,7 @@
         <div class="flex flex-row flex-1 gap-6 min-h-0">
             <x-table subheading="Daftar bidang (pengguna) aktif." heading="Bidang (Users)" :columns="$userColumns"
                 :rows="$userRows" :showCheckbox="false" :showActions="false"></x-table>
-            <a href="" class="flex flex-1">
+            <a href="{{ route('users.index') }}" class="flex flex-1">
                 <div
                     class="min-w-[240px] flex flex-col justify-center items-center bg-bg-base-default border border-bor-base-default rounded-lg p-6 gap-6">
                     <x-heroicon-m-users class="w-[40px] h-auto" />
