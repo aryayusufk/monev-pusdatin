@@ -14,13 +14,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Dashboard bawaan Breeze
-Route::get('/dashboard', [ConfigurationController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
 // Semua route yang butuh login
 Route::middleware('auth')->group(function () {
+
+    Route::get('/configuration', [ConfigurationController::class, 'index'])->name('configuration');
 
     // Profile (bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

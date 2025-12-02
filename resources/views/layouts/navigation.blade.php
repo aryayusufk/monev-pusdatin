@@ -5,14 +5,14 @@
             <div class="flex flex-col py-8 gap-4">
                 <!-- Logo -->
                 <div class="flex items-center justify-center">
-                    <a href="{{ route('dashboard') }}">
+                    <a href="{{ route('configuration') }}">
                         <x-application-logo class="block h-12 w-auto fill-current text-txt-base-default" />
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="flex flex-col gap-2">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    <x-nav-link :href="route('configuration')" :active="request()->routeIs('configuration')">
                         {{ __('Konfigurasi') }}
                     </x-nav-link>
                     <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
