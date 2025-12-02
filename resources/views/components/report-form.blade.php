@@ -1,6 +1,7 @@
 @props([
     'title' => 'Form Title',
     'buttonLabel' => 'Button Label',
+    'ikus' => [],
 ])
 
 <div class="flex flex-col w-full h-fit p-6 gap-6 bg-bg-base-default border border-bor-base-default rounded-2xl">
@@ -8,25 +9,25 @@
         <h1>{{ $title }}</h1>
     </div>
 
-    <form action="" method="POST" class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
+    <form action="{{ route('activities.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
 
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="iku" :value="__('IKU')" />
             <div class="flex flex-row gap-2 items-center w-full">
                 <x-select-input id="iku" name="iku" class="block w-full">
                     <option value="" disabled selected>Pilih IKU</option>
-                    <option value="iku1">IKU 1</option>
-                    <option value="iku2">IKU 2</option>
-                    <option value="iku3">IKU 3</option>
+                    @foreach ($ikus as $iku)
+                        <option value="{{ $iku->id }}" @selected(collect(old('iku_ids'))->contains($iku_id))>{{ $iku->kode }} - {{ $iku->nama }}</option>
+                    @endforeach
                 </x-select-input>
-                <x-heroicon-o-information-circle class="w-[24px] h-[24px]" />
+                <x-heroicon-m-information-circle class="w-[24px] h-[24px]" />
             </div>
         </div>
 
         <div class="flex flex-col gap-2 w-full">
-            <x-input-label for="activity_name" :value="__('Kegiatan')" />
-            <x-text-input id="activity_name" class="block w-full" type="text" name="activity_name" :value="old('activity_name')"
-                required autofocus autocomplete="activity_name" />
+            <x-input-label for="kegiatan" :value="__('Kegiatan')" />
+            <x-text-input id="kegiatan" class="block w-full" type="text" name="kegiatan" :value="old('kegiatan')"
+                required autofocus autocomplete="kegiatan" />
         </div>
 
         <div class="flex flex-col gap-2 w-full">

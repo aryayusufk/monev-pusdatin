@@ -6,17 +6,18 @@ use App\Http\Controllers\IkuController;
 use App\Http\Controllers\ActivityFileController;
 use App\Http\Controllers\ActivityNoteController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\BidangController; // <--- TAMBAHAN PENTING
+use App\Http\Controllers\BidangController;
+use App\Http\Controllers\ConfigurationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 // Dashboard bawaan Breeze
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [ConfigurationController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Semua route yang butuh login
 Route::middleware('auth')->group(function () {
@@ -106,4 +107,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
