@@ -17,7 +17,29 @@ class IkuController extends Controller
             ->orderBy('kode')
             ->paginate(20);
 
-        return view('ikus.index', compact('ikus'));
+        $columns = [
+            'Nama IKU',
+            'Target',
+            'Deskripsi',
+            'Bidang Terkait',
+        ];
+
+        $rows = collect($ikus->items())->map(function (Iku $iku) {
+            return [
+                // id dipakai untuk checkbox / action di komponen tabel
+                'id'         => $iku->id,
+                'nama'       => $iku->nama,
+                'target'     => $iku->target ?? '-',
+                'deskripsi'  => $iku->deskripsi ?? '-',
+                'bidangs'    => $iku->bidangs->pluck('nama')->join(', ') ?: '-',
+            ];
+        });
+
+        return view('ikus.index', [
+            'ikus'    => $ikus,
+            'columns' => $columns,
+            'rows'    => $rows,
+        ]);
     }
 
     public function create(Request $request)

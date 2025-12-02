@@ -20,7 +20,7 @@
                         <option value="{{ $iku->id }}" @selected(collect(old('iku_ids'))->contains($iku_id))>{{ $iku->kode }} - {{ $iku->nama }}</option>
                     @endforeach
                 </x-select-input>
-                <x-heroicon-o-information-circle class="w-[24px] h-[24px]" />
+                <x-heroicon-m-information-circle class="w-[24px] h-[24px]" />
             </div>
         </div>
 

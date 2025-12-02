@@ -22,8 +22,36 @@ class UserController extends Controller
             ->orderBy('name')
             ->paginate(20);
 
+        $columns = [
+            'Nama',
+            'Username',
+            'Bidang',
+            'Role',
+        ];
+
+        $rows = $users->getCollection()->map(function (User $user) {
+            return [
+                // dipakai untuk checkbox / action di komponen tabel
+                'id'      => $user->id,
+
+                // Kolom 1: Nama
+                'name'    => $user->name,
+
+                // Kolom 2: Username
+                'username' => $user->username,
+
+                // Kolom 3: Bidang (jika ada relasi bidang)
+                'bidang'  => optional($user->bidang)->nama ?? '-',
+
+                // Kolom 4: Role (kalau punya banyak role, dijoin dengan koma)
+                'role'    => $user->roles->pluck('name')->join(', ') ?: '-',
+            ];
+        });
+
         return view('users.index', [
             'users' => $users,
+            'columns' => $columns,
+            'rows' => $rows,
         ]);
     }
 
@@ -84,8 +112,8 @@ class UserController extends Controller
             if ($monevRole) {
                 // cek apakah SUDAH ada user monev_bidang di bidang tersebut
                 $existingMonev = User::whereHas('roles', function ($q) use ($monevRole) {
-                        $q->where('roles.id', $monevRole->id);
-                    })
+                    $q->where('roles.id', $monevRole->id);
+                })
                     ->where('bidang_id', $user->bidang_id)
                     ->first();
 

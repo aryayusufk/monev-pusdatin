@@ -13,14 +13,26 @@
                 heading="Catatan Aktivitas"></x-table>
         </div>
         <div class="flex flex-row flex-1 gap-6 min-h-0">
-            <x-card text="Manajemen IKU"></x-card>
-            <x-table subheading="Daftar IKU (Indikator Kinerja Utama) aktif."
-                heading="IKU (Indikator Kinerja Utama)"></x-table>
+            <a href="{{ route('ikus.index') }}" class="flex flex-1">
+                <div
+                    class="min-w-[240px] flex flex-col justify-center items-center bg-bg-base-default border border-bor-base-default rounded-lg p-6 gap-6">
+                    <x-heroicon-m-arrow-trending-up class="w-[40px] h-auto" />
+                    <p class="w-full text-center text-2xl font-semibold">Manajemen IKU</p>
+                </div>
+            </a>
+            <x-table subheading="Daftar IKU (Indikator Kinerja Utama) aktif." heading="IKU (Indikator Kinerja Utama)"
+                :columns="$ikuColumns" :rows="$ikuRows" :showCheckbox="false" :showActions="true"></x-table>
         </div>
         <div class="flex flex-row flex-1 gap-6 min-h-0">
-            <x-table subheading="Daftar bidang (pengguna) aktif."
-                heading="Bidang (Users)"></x-table>
-            <x-card text="Manajemen Bidang"></x-card>
+            <x-table subheading="Daftar bidang (pengguna) aktif." heading="Bidang (Users)" :columns="$userColumns"
+                :rows="$userRows" :showCheckbox="false" :showActions="false"></x-table>
+            <a href="" class="flex flex-1">
+                <div
+                    class="min-w-[240px] flex flex-col justify-center items-center bg-bg-base-default border border-bor-base-default rounded-lg p-6 gap-6">
+                    <x-heroicon-m-users class="w-[40px] h-auto" />
+                    <p class="w-full text-center text-2xl font-semibold">Manajemen User</p>
+                </div>
+            </a>
         </div>
     </div>
 </x-app-layout>

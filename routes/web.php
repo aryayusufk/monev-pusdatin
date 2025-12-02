@@ -6,7 +6,8 @@ use App\Http\Controllers\IkuController;
 use App\Http\Controllers\ActivityFileController;
 use App\Http\Controllers\ActivityNoteController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\BidangController; // <--- TAMBAHAN PENTING
+use App\Http\Controllers\BidangController;
+use App\Http\Controllers\ConfigurationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,9 +15,9 @@ Route::get('/', function () {
 });
 
 // Dashboard bawaan Breeze
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [ConfigurationController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Semua route yang butuh login
 Route::middleware('auth')->group(function () {
@@ -32,10 +33,10 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
-    Route::get('/activities/create-report', [ActivityController::class, 'create'])->name('activities.create-report');
+    Route::get('/activities/create', [ActivityController::class, 'create'])->name('activities.create');
     Route::post('/activities', [ActivityController::class, 'store'])->name('activities.store');
     Route::get('/activities/{activity}', [ActivityController::class, 'show'])->name('activities.show');
-    Route::get('/activities/{activity}/edit-report', [ActivityController::class, 'edit'])->name('activities.edit-report');
+    Route::get('/activities/{activity}/edit', [ActivityController::class, 'edit'])->name('activities.edit');
     Route::put('/activities/{activity}', [ActivityController::class, 'update'])->name('activities.update');
     Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->name('activities.destroy');
 
@@ -106,4 +107,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
