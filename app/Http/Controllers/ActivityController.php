@@ -8,6 +8,7 @@ use App\Http\Requests\SelectQuarterlyRequest;
 use App\Models\Activity;
 use App\Models\Bidang;
 use App\Models\Iku;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -106,6 +107,16 @@ class ActivityController extends Controller
             $activity->ikus()->sync($syncData);
         }
 
+            // ===== LOG ACTIVITY CREATED =====
+        $bidangName = $user->bidang?->nama ?? '-';
+        $roleStr    = $user->roles->pluck('name')->join(', ');
+
+        SystemLog::write(
+            'activity.created',
+            "{$user->name} ({$roleStr} - {$bidangName}) membuat laporan kegiatan: " .
+            str($activity->kegiatan)->limit(80)
+        );
+
         return redirect()
             ->route('activities.show', $activity)
             ->with('success', 'Laporan kegiatan berhasil dibuat.');
@@ -166,22 +177,44 @@ class ActivityController extends Controller
             $activity->ikus()->sync($syncData);
         }
 
+            // ===== LOG ACTIVITY UPDATED =====
+        $bidangName = $user->bidang?->nama ?? '-';
+        $roleStr    = $user->roles->pluck('name')->join(', ');
+
+        SystemLog::write(
+            'activity.updated',
+            "{$user->name} ({$roleStr} - {$bidangName}) memperbarui laporan kegiatan (ID: {$activity->id})"
+        );
+
         return redirect()
             ->route('activities.show', $activity)
             ->with('success', 'Laporan kegiatan berhasil diperbarui.');
     }
 
 
-    public function destroy(Activity $activity)
+        public function destroy(Activity $activity, Request $request)
     {
         $this->authorize('delete', $activity);
 
+        $user    = $request->user();
+        $roleStr = $user->roles->pluck('name')->join(', ');
+        $bidangName = $activity->bidang?->nama ?? '-';
+
+        $id = $activity->id;
+
         $activity->delete();
+
+        // ===== LOG ACTIVITY DELETED =====
+        SystemLog::write(
+            'activity.deleted',
+            "{$user->name} ({$roleStr} - {$bidangName}) menghapus laporan kegiatan (ID: {$id})"
+        );
 
         return redirect()
             ->route('activities.index')
             ->with('success', 'Laporan kegiatan berhasil dihapus.');
     }
+
 
     public function selectQuarterly(SelectQuarterlyRequest $request, Activity $activity)
     {
@@ -194,6 +227,17 @@ class ActivityController extends Controller
         $activity->selected_quarterly_by = $request->user()->id;
         $activity->selected_quarterly_at = now();
         $activity->save();
+
+        $isSelected = $activity->is_selected_quarterly;
+        $scope      = $activity->selected_quarterly_scope ?? '-';
+        $actor      = $request->user();
+        $roleStr    = $actor->roles->pluck('name')->join(', ');
+        $statusText = $isSelected ? "memilih" : "membatalkan pilihan";
+
+        SystemLog::write(
+            'activity.quarterly_selection',
+            "{$actor->name} ({$roleStr}) {$statusText} laporan kegiatan (ID: {$activity->id}) untuk laporan triwulan (scope: {$scope})"
+        );
 
         return redirect()
             ->back()

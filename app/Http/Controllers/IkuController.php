@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Iku;
 use App\Models\Bidang;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 
 class IkuController extends Controller
@@ -86,6 +87,15 @@ class IkuController extends Controller
 
         $iku->bidangs()->sync($data['bidang_ids'] ?? []);
 
+        // ===== LOG IKU CREATED =====
+        $actor   = $request->user();
+        $roleStr = $actor->roles->pluck('name')->join(', ');
+
+        SystemLog::write(
+            'iku.created',
+            "{$actor->name} ({$roleStr}) membuat IKU baru: [{$iku->kode}] {$iku->nama}"
+        );
+
         return redirect()
             ->route('ikus.index')
             ->with('success', 'IKU berhasil dibuat.');
@@ -133,6 +143,15 @@ class IkuController extends Controller
 
         $iku->bidangs()->sync($data['bidang_ids'] ?? []);
 
+                // ===== LOG IKU UPDATED =====
+        $actor   = $request->user();
+        $roleStr = $actor->roles->pluck('name')->join(', ');
+
+        SystemLog::write(
+            'iku.updated',
+            "{$actor->name} ({$roleStr}) memperbarui IKU: [{$iku->kode}] {$iku->nama}"
+        );
+
         return redirect()
             ->route('ikus.index')
             ->with('success', 'IKU berhasil diperbarui.');
@@ -146,6 +165,16 @@ class IkuController extends Controller
 
         $iku->is_active = ! $iku->is_active;
         $iku->save();
+
+             // ===== LOG IKU TOGGLE ACTIVE =====
+        $status  = $iku->is_active ? 'aktif' : 'non-aktif';
+        $actor   = $request->user();
+        $roleStr = $actor->roles->pluck('name')->join(', ');
+
+        SystemLog::write(
+            'iku.toggled',
+            "{$actor->name} ({$roleStr}) mengubah status IKU [{$iku->kode}] {$iku->nama} menjadi {$status}"
+        );
 
         return redirect()
             ->route('ikus.index')
