@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Bidang;
 use App\Models\Role;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -144,6 +145,13 @@ class UserController extends Controller
             }
         }
 
+           // ===== LOG USER CREATED =====
+        $roleStr = $user->roles->pluck('name')->join(', ');
+        SystemLog::write(
+            'user.created',
+            "{$acting->name} (super_admin) membuat user baru: {$user->username} dengan role {$roleStr}"
+        );
+
         return redirect()
             ->route('users.index')
             ->with('success', 'User berhasil dibuat.');
@@ -203,6 +211,13 @@ class UserController extends Controller
         $role = Role::where('name', $roleName)->firstOrFail();
         $user->roles()->sync([$role->id]);
 
+            // ===== LOG USER UPDATED =====
+        $roleStr = $user->roles->pluck('name')->join(', ');
+        SystemLog::write(
+            'user.updated',
+            "{$acting->name} (super_admin) memperbarui user: {$user->username} dengan role {$roleStr}"
+        );
+
         return redirect()
             ->route('users.index')
             ->with('success', 'User berhasil diperbarui.');
@@ -211,18 +226,28 @@ class UserController extends Controller
     /**
      * Hapus user.
      */
-    public function destroy(Request $request, User $user)
+        public function destroy(Request $request, User $user)
     {
         $acting = $request->user();
         $this->ensureCanManageUsers($acting);
 
+        $username = $user->username;
+
         // kalau pakai soft deletes:
         $user->delete();
+
+        // ===== LOG USER DELETED =====
+        SystemLog::write(
+            'user.deleted',
+            "{$acting->name} (super_admin) menghapus user: {$username}"
+        );
+        // =================================
 
         return redirect()
             ->route('users.index')
             ->with('success', 'User berhasil dihapus.');
     }
+
 
     /**
      * Hanya super_admin yang boleh kelola user.
