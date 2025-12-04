@@ -21,7 +21,7 @@
                 </div>
             </a>
             <x-table subheading="Daftar IKU (Indikator Kinerja Utama) aktif." heading="IKU (Indikator Kinerja Utama)"
-                :columns="$ikuColumns" :rows="$ikuRows" :showCheckbox="false" :showActions="true"></x-table>
+                :columns="$ikuColumns" :rows="$ikuRows" :showCheckbox="false" :showActions="false"></x-table>
         </div>
         <div class="flex flex-row flex-1 gap-6 min-h-0">
             <x-table subheading="Daftar bidang (pengguna) aktif." heading="Bidang (Users)" :columns="$userColumns"
