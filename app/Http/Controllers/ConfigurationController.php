@@ -58,6 +58,6 @@ class ConfigurationController extends Controller
             ];
         });
 
-        return view('dashboard', compact('ikuColumns', 'ikuRows', 'userColumns', 'userRows'));
+        return view('configuration', compact('ikuColumns', 'ikuRows', 'userColumns', 'userRows'));
     }
 }
