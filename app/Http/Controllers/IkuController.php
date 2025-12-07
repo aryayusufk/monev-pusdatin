@@ -15,12 +15,13 @@ class IkuController extends Controller
         $this->authorize('viewAny', Iku::class);
 
         $ikus = Iku::with('bidangs')
+            ->when($request->filled('tahun'), fn ($q) => $q->where('tahun', (int) $request->tahun))
             ->orderBy('kode')
             ->paginate(20);
 
         $columns = [
             'Nama IKU',
-            'Target',
+            'Tahun',
             'Deskripsi',
             'Bidang Terkait',
         ];
@@ -30,7 +31,7 @@ class IkuController extends Controller
                 // id dipakai untuk checkbox / action di komponen tabel
                 'id'         => $iku->id,
                 'nama'       => $iku->nama,
-                'target'     => $iku->target ?? '-',
+                'tahun'     => $iku->tahun ?? '-',
                 'deskripsi'  => $iku->deskripsi ?? '-',
                 'bidangs'    => $iku->bidangs->pluck('nama')->join(', ') ?: '-',
             ];
@@ -63,7 +64,7 @@ class IkuController extends Controller
             // TIDAK lagi minta 'kode' dari form
             'nama'          => ['required', 'string', 'max:255'],
             'deskripsi'     => ['nullable', 'string'],
-            'target'        => ['nullable', 'string', 'max:255'],
+            'tahun'        => ['required', 'integer', 'min:2000', 'max:2100'],
             'is_active'     => ['nullable', 'boolean'],
             'bidang_ids'    => ['nullable', 'array'],
             'bidang_ids.*'  => ['integer', 'exists:bidangs,id'],
@@ -81,7 +82,7 @@ class IkuController extends Controller
             'kode'      => $kodeAuto,
             'nama'      => $data['nama'],
             'deskripsi' => $data['deskripsi'] ?? null,
-            'target'    => $data['target'] ?? null,
+            'tahun'    => $data['tahun'] ?? null,
             'is_active' => $data['is_active'],
         ]);
 
@@ -125,7 +126,7 @@ class IkuController extends Controller
             // 'kode' tidak diminta dari form
             'nama'          => ['required', 'string', 'max:255'],
             'deskripsi'     => ['nullable', 'string'],
-            'target'        => ['nullable', 'string', 'max:255'],
+            'tahun'        => ['required', 'integer', 'min:2000', 'max:2100'],
             'is_active'     => ['nullable', 'boolean'],
             'bidang_ids'    => ['nullable', 'array'],
             'bidang_ids.*'  => ['integer', 'exists:bidangs,id'],
@@ -137,7 +138,7 @@ class IkuController extends Controller
             // kode tetap pakai yang lama
             'nama'      => $data['nama'],
             'deskripsi' => $data['deskripsi'] ?? null,
-            'target'    => $data['target'] ?? null,
+            'tahun'    => $data['tahun'] ?? null,
             'is_active' => $data['is_active'],
         ]);
 

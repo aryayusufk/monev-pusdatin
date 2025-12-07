@@ -15,6 +15,7 @@ class IkuResource extends JsonResource
             'id'        => $this->id,
             'kode'      => $this->kode,
             'nama'      => $this->nama,
+            'tahun'     => $this->tahun,
             'is_active' => (bool) $this->is_active,
         ];
     }

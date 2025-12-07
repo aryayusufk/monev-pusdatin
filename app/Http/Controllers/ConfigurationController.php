@@ -19,7 +19,7 @@ class ConfigurationController extends Controller
 
         $ikuColumns = [
             'Nama IKU',
-            'Target',
+            'Tahun',
             'Deskripsi',
             'Bidang Terkait',
         ];
@@ -28,7 +28,7 @@ class ConfigurationController extends Controller
             return [
                 'id'         => $iku->id,
                 'nama'       => $iku->nama,
-                'target'     => $iku->target ?? '-',
+                'tahun'     => $iku->tahun ?? '-',
                 'deskripsi'  => $iku->deskripsi ?? '-',
                 'bidangs'    => $iku->bidangs->pluck('nama')->join(', ') ?: '-',
             ];

@@ -27,20 +27,26 @@
                 </div>
 
                 <div class="flex flex-col gap-2 w-full">
-                  <x-input-label for="target" :value="__('Target')" />
-                  <x-text-input id="target" class="block w-full" type="number" name="target" :value="old('target')"
-                      required autofocus autocomplete="target" />
+                  <x-input-label for="tahun" :value="__('Tahun')" />
+                  <x-text-input id="tahun" class="block w-full" type="number" name="tahun" :value="old('tahun')"
+                      required autofocus autocomplete="tahun" required min="2000" max="2100"/>
                 </div>
 
                 <div class="flex flex-col gap-2 w-full">
-                  <x-input-label for="bidang_id" :value="__('Bidang')" />
-                  <x-select-input id="bidang_id" name="bidang_id" class="block w-full">
-                      <option value="" disabled selected>Pilih Bidang</option>
-                      @foreach ($bidangs as $bidang)
-                          <option value="{{ $bidang->id }}" @selected(old('bidang_id') == $bidang->id)>{{ $bidang->nama }}</option>
-                      @endforeach
-                  </x-select-input>
+                    <x-input-label for="bidang_ids" :value="__('Bidang Terkait')" />
+                    <x-select-input id="bidang_ids" name="bidang_ids[]" class="block w-full" multiple>
+                        @foreach ($bidangs as $bidang)
+                            <option value="{{ $bidang->id }}"
+                                @if (collect(old('bidang_ids', []))->contains($bidang->id)) selected @endif>
+                                {{ $bidang->nama }}
+                            </option>
+                        @endforeach
+                    </x-select-input>
+                    <p class="text-xs text-txt-base-subtle mt-1">
+                        (Tahan Ctrl / Cmd untuk memilih lebih dari satu bidang)
+                    </p>
                 </div>
+
 
                 <div class="flex justify-end">
                     <x-primary-button>

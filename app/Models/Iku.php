@@ -13,12 +13,13 @@ class Iku extends Model
         'kode',
         'nama',
         'deskripsi',
-        'target',
+        'tahun',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'tahun'     => 'integer',
     ];
 
     public function bidangs()
