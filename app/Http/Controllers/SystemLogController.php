@@ -30,15 +30,27 @@ class SystemLogController extends Controller
 
         $logs = $query->paginate(20)->withQueryString();
 
-        // Kalau FE JS nanti minta JSON (Accept: application/json)
-        if ($request->wantsJson()) {
-            return response()->json($logs);
-        }
+        $columns = [
+            'Waktu',
+            'Pengguna',
+            'Aksi',
+            'Deskripsi',
+        ];
 
-        // Untuk sekarang: pakai Blade tester
-        return view('logs.index', [
-            'logs'    => $logs,
-            'filters' => $request->only(['action', 'search']),
+        $rows = $logs->map(function (SystemLog $log) {
+            return [
+                'id'        => $log->id,
+                'waktu'     => e(optional($log->created_at)->format('d M Y H:i')),
+                'pengguna'  => e(optional($log->user)->name ?? optional($log->user)->username ?? '-'),
+                'aksi'      => e($log->action ?? '-'),
+                'deskripsi' => e($log->description ?? '-'),
+            ];  
+        })->toArray();
+
+        return view('systemlog', [
+            'columns' => $columns,
+            'rows'    => $rows,
         ]);
+
     }
 }

@@ -5,24 +5,24 @@
             <div class="flex flex-col py-8 gap-4">
                 <!-- Logo -->
                 <div class="flex items-center justify-center">
-                    <a href="{{ route('configuration') }}">
+                    <a href="#">
                         <x-application-logo class="block h-12 w-auto fill-current text-txt-base-default" />
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="flex flex-col gap-2">
-                    <x-nav-link :href="route('configuration')" :active="request()->routeIs('configuration')">
-                        {{ __('Konfigurasi') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
-                        {{ __('Buat Laporan') }}
-                    </x-nav-link>
                     <x-nav-link href="#" :active="false">
                         Laporan Bidang
                     </x-nav-link>
                     <x-nav-link href="#" :active="false">
                         Laporan Monitoring & Evaluasi
+                    </x-nav-link>
+                    <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
+                        {{ __('Buat Laporan') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('systemlog')" :active="request()->routeIs('systemlog')">
+                        {{ __('Catatan Aktivitas') }}
                     </x-nav-link>
                 </div>
             </div>
