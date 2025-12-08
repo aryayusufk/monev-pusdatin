@@ -1,6 +1,6 @@
 <x-app-layout>
 
-    <div class="flex flex-col items-center justify-center p-6 gap-6 bg-bg-base-secondary h-screen max-h-screen">
+    <div class="flex flex-col items-center justify-center p-6 gap-6 bg-bg-base-secondary">
 
         <div class="flex flex-col w-full p-6 gap-6 rounded-lg bg-bg-base-default border border-bor-base-default">
             <div class="flex flex-row w-full justify-between">
