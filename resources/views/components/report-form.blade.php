@@ -4,7 +4,7 @@
     'ikus' => [],
 ])
 
-<div class="flex flex-col w-full h-fit p-6 gap-6 bg-bg-base-default border border-bor-base-default rounded-2xl">
+<div class="flex flex-col w-full p-6 gap-6 rounded-xl bg-bg-base-default border border-bor-base-default">
     <div class="w-full text-2xl font-semibold text-acc-base-default">
         <h1>{{ $title }}</h1>
     </div>

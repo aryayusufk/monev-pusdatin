@@ -11,7 +11,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false }">
                     <x-nav-link href="#" :active="false">
                         Laporan Bidang
                     </x-nav-link>
@@ -24,6 +24,23 @@
                     <x-nav-link :href="route('systemlog')" :active="request()->routeIs('systemlog')">
                         {{ __('Catatan Aktivitas') }}
                     </x-nav-link>
+                    <button type="button" @click="openKonfigurasi = !openKonfigurasi"
+                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                        <span>Konfigurasi</span>
+                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition" x-bind:class="openKonfigurasi ? 'rotate-180' : ''" />
+                    </button>
+
+                    <div x-show="openKonfigurasi" x-collapse class="flex flex-col gap-2 p-2">
+                        <x-nav-link :href="route('ikus.index')" :active="request()->routeIs('ikus.index')">
+                            {{ __('Manajemen IKU') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+                            {{ __('Manajemen Pengguna') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('bidangs.index')" :active="request()->routeIs('bidangs.index')">
+                            {{ __('Manajemen Bidang') }}
+                        </x-nav-link>
+                    </div>
                 </div>
             </div>
 
