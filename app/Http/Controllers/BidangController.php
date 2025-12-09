@@ -18,7 +18,33 @@ class BidangController extends Controller
 
         $bidangs = Bidang::orderBy('kode')->paginate(20);
 
-        return view('bidangs.index', compact('bidangs'));
+        $columns = [
+            'Kode Bidang',
+            'Nama Bidang',
+            'Akun',
+        ];
+
+        $rows = $bidangs->getCollection()->map(function (Bidang $bidang) {
+            return [
+                // dipakai untuk checkbox / action di komponen tabel
+                'id'      => $bidang->id,
+
+                // Kolom 1: Kode Bidang
+                'kode'    => $bidang->kode,
+
+                // Kolom 2: Nama Bidang
+                'nama'    => $bidang->nama,
+
+                // Kolom 3: Akun (jumlah user bidang)
+                'akun'    => $bidang->users()->count(),
+            ];
+        });
+
+        return view('bidangs.index', [
+            'bidangs' => $bidangs,
+            'columns' => $columns,
+            'rows'    => $rows,
+        ]);
     }
 
     public function create(Request $request)
