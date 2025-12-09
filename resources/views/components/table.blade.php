@@ -6,6 +6,8 @@
     'showCheckbox' => false,
     'showActions' => false,
     'checkboxName' => 'selected',
+    'editRoute' => null,
+    'deleteRoute' => null,
 ])
 
 <div class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm h-full min-h-0">
@@ -75,18 +77,28 @@
                             @endforeach
 
                             @if ($showActions)
-                                <td class="shrink-0 w-8 flex items-start justify-end">
-                                    <button type="button"
-                                        class="inline-flex items-center justify-center w-7 h-7 rounded-full hover:bg-bg-base-subtle focus:outline-none focus:ring-2 focus:ring-acc-base-default">
-                                        <span class="sr-only">Buka menu</span>
-                                        {{-- ikon titik tiga (horizontal) --}}
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                            class="w-4 h-4 text-txt-base-secondary">
-                                            <circle cx="4" cy="10" r="1.5" />
-                                            <circle cx="10" cy="10" r="1.5" />
-                                            <circle cx="16" cy="10" r="1.5" />
-                                        </svg>
-                                    </button>
+                                <td class="shrink-0 w-32 flex items-center justify-end gap-3">
+
+                                    @if ($editRoute)
+                                        <a href="{{ route($editRoute, $row['id']) }}"
+                                            class="text-xs font-medium text-acc-base-default hover:underline">
+                                            Ubah
+                                        </a>
+                                    @endif
+
+                                    @if ($deleteRoute)
+                                        <form action="{{ route($deleteRoute, $row['id']) }}" method="POST"
+                                            onsubmit="return confirm('Yakin ingin menghapus data ini?');">
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button type="submit"
+                                                class="text-xs font-medium text-red-600 hover:underline">
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    @endif
+
                                 </td>
                             @endif
                         </tr>

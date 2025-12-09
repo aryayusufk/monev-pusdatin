@@ -16,7 +16,7 @@
         </div>
 
         <x-table subheading="" heading="" :columns="$columns" :rows="$rows" :showCheckbox="false"
-            :showActions="true"></x-table>
+            :showActions="true" editRoute="ikus.edit" deleteRoute="ikus.destroy"></x-table>
 
     </div>
 

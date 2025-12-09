@@ -16,7 +16,7 @@
         </div>
 
         <x-table subheading="" heading="" :columns="$columns" :rows="$rows" :showCheckbox="false"
-            :showActions="true"></x-table>
+            :showActions="true" editRoute="users.edit" deleteRoute="users.destroy"></x-table>
 
     </div>
 

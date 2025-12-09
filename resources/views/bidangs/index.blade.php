@@ -16,6 +16,6 @@
     </div>
 
     <x-table subheading="" heading="" :columns="$columns" :rows="$rows" :showCheckbox="false"
-      :showActions="false"></x-table>
+      :showActions="true" editRoute="bidangs.edit" deleteRoute="bidangs.destroy"></x-table>
   </div>
 </x-app-layout>
