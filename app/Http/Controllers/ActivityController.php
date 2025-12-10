@@ -50,9 +50,9 @@ class ActivityController extends Controller
 
         return view('activities.index', [
             'activities' => $activities,
-            'filters' => $request->only(['search','year','month','quarter','iso_week','iku_id','selected_quarterly']),
-            'ikus' => $ikus,
-            'bidangs' => $bidangs,
+            'filters'    => $request->only(['search','year','month','quarter','iso_week','iku_id','selected_quarterly']),
+            'ikus'       => $ikus,
+            'bidangs'    => $bidangs,
         ]);
     }
 
@@ -107,7 +107,7 @@ class ActivityController extends Controller
             $activity->ikus()->sync($syncData);
         }
 
-            // ===== LOG ACTIVITY CREATED =====
+        // ===== LOG ACTIVITY CREATED =====
         $bidangName = $user->bidang?->nama ?? '-';
         $roleStr    = $user->roles->pluck('name')->join(', ');
 
@@ -177,7 +177,7 @@ class ActivityController extends Controller
             $activity->ikus()->sync($syncData);
         }
 
-            // ===== LOG ACTIVITY UPDATED =====
+        // ===== LOG ACTIVITY UPDATED =====
         $bidangName = $user->bidang?->nama ?? '-';
         $roleStr    = $user->roles->pluck('name')->join(', ');
 
@@ -191,13 +191,12 @@ class ActivityController extends Controller
             ->with('success', 'Laporan kegiatan berhasil diperbarui.');
     }
 
-
-        public function destroy(Activity $activity, Request $request)
+    public function destroy(Activity $activity, Request $request)
     {
         $this->authorize('delete', $activity);
 
-        $user    = $request->user();
-        $roleStr = $user->roles->pluck('name')->join(', ');
+        $user       = $request->user();
+        $roleStr    = $user->roles->pluck('name')->join(', ');
         $bidangName = $activity->bidang?->nama ?? '-';
 
         $id = $activity->id;
@@ -215,12 +214,11 @@ class ActivityController extends Controller
             ->with('success', 'Laporan kegiatan berhasil dihapus.');
     }
 
-
     public function selectQuarterly(SelectQuarterlyRequest $request, Activity $activity)
     {
         $data = $request->validated();
 
-        $activity->is_selected_quarterly = (bool) $data['select'];
+        $activity->is_selected_quarterly  = (bool) $data['select'];
         $activity->selected_quarterly_scope = $activity->is_selected_quarterly
             ? $data['selected_quarterly_scope']
             : null;
@@ -242,5 +240,120 @@ class ActivityController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Status seleksi triwulan diperbarui.');
+    }
+
+    /**
+     * Laporan Mingguan per Bidang - daftar minggu
+     * URL contoh: /laporan-bidang/mingguan?year=2025&month=1
+     */
+    public function weeklyIndex(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $user  = $request->user();
+        $year  = (int) ($request->input('year') ?: now()->year);
+        $month = $request->input('month'); // bisa null (semua bulan di tahun tsb)
+
+        $query = Activity::query()
+            ->where('year', $year);
+
+        // Filter bulan (kalau UI pilih bulan)
+        if (! empty($month)) {
+            $query->where('month', (int) $month);
+        }
+
+        // Batasi per bidang sesuai role
+        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
+            $query->where('bidang_id', $user->bidang_id);
+        } else {
+            if ($request->filled('bidang_id')) {
+                $query->where('bidang_id', (int) $request->bidang_id);
+            }
+        }
+
+        // Filter IKU kalau dikirim dari UI
+        if ($request->filled('iku_id')) {
+            $ikuId = (int) $request->iku_id;
+            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+        }
+
+        // Ambil daftar minggu (iso_week) yang punya data
+        $weeks = $query
+            ->select('iso_week')
+            ->distinct()
+            ->orderBy('iso_week')
+            ->get()
+            ->map(function ($row) use ($year) {
+                return [
+                    'year'  => $year,
+                    'week'  => $row->iso_week,
+                    'label' => 'Laporan Minggu Ke - ' . $row->iso_week,
+                ];
+            });
+
+        $ikus    = Iku::orderBy('kode')->get();
+        $bidangs = Bidang::orderBy('nama')->get();
+
+        return view('reports.bidang.weekly-index', [
+            'year'    => $year,
+            'month'   => $month,
+            'weeks'   => $weeks,
+            'ikus'    => $ikus,
+            'bidangs' => $bidangs,
+        ]);
+    }
+
+    /**
+     * Laporan Mingguan per Bidang - isi 1 minggu tertentu
+     * URL contoh: /laporan-bidang/mingguan/2025/1
+     */
+    public function weeklyShow(Request $request, int $year, int $week)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $user = $request->user();
+
+        $query = Activity::with('files')
+            ->where('year', $year)
+            ->where('iso_week', $week);
+
+        // Batasi per bidang sesuai role
+        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
+            $query->where('bidang_id', $user->bidang_id);
+        } else {
+            if ($request->filled('bidang_id')) {
+                $query->where('bidang_id', (int) $request->bidang_id);
+            }
+        }
+
+        // Filter IKU kalau ada
+        if ($request->filled('iku_id')) {
+            $ikuId = (int) $request->iku_id;
+            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+        }
+
+        $activities = $query
+            ->orderBy('occurred_at')
+            ->get();
+
+        $rows = $activities->map(function (Activity $act) {
+            $file = $act->files->first(); // asumsi 1 file utama per laporan
+
+            return [
+                'id'            => $act->id,
+                'kegiatan'      => $act->kegiatan,
+                'tindak_lanjut' => $act->tindak_lanjut ?? '-',
+                'kendala'       => $act->kendala ?? '-',
+                'percepatan'    => $act->percepatan ?? '-',
+                'file_name'     => $file?->original_name ?? '-',
+                'file_url'      => $file ? route('files.download', $file->id) : null,
+            ];
+        });
+
+        return view('reports.bidang.weekly-show', [
+            'year' => $year,
+            'week' => $week,
+            'rows' => $rows,
+        ]);
     }
 }

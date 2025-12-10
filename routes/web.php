@@ -44,6 +44,17 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Laporan Mingguan per Bidang
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/laporan-bidang/mingguan', [ActivityController::class, 'weeklyIndex'])
+        ->name('reports.bidang.weekly.index');
+
+    Route::get('/laporan-bidang/mingguan/{year}/{week}', [ActivityController::class, 'weeklyShow'])
+        ->name('reports.bidang.weekly.show');
+
+    /*
+    |--------------------------------------------------------------------------
     | Activity Files (Data Pendukung / Lampiran PDF)
     |--------------------------------------------------------------------------
     */

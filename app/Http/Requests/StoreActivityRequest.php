@@ -22,6 +22,7 @@ class StoreActivityRequest extends FormRequest
             'percepatan'    => ['nullable','string','max:1000'],
             'proyeksi_kedepan' => ['nullable','string','max:1000'],
 
+            //KALO INGIN JADI MANUAL HAPUS OCCURED_AT
             //'occurred_at'   => ['required','date'],
 
             'iku_ids'   => ['required','array','min:1'],
