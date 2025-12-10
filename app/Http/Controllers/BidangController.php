@@ -21,6 +21,7 @@ class BidangController extends Controller
         $columns = [
             'Kode Bidang',
             'Nama Bidang',
+            'Deskripsi',
             'Akun',
         ];
 
@@ -35,7 +36,11 @@ class BidangController extends Controller
                 // Kolom 2: Nama Bidang
                 'nama'    => $bidang->nama,
 
-                // Kolom 3: Akun (jumlah user bidang)
+                // Kolom 3: Deskripsi
+                'deskripsi' => $bidang->deskripsi ?? '-',
+
+
+                // Kolom 4: Akun (jumlah user bidang)
                 'akun'    => $bidang->users()->count(),
             ];
         });
