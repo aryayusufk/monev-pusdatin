@@ -77,7 +77,7 @@
                             @endforeach
 
                             @if ($showActions)
-                                <td class="shrink-0 w-32 flex items-center justify-end gap-3">
+                                <td class="flex flex-col items-center justify-end gap-2">
 
                                     @if ($editRoute)
                                         <a href="{{ route($editRoute, $row['id']) }}"
