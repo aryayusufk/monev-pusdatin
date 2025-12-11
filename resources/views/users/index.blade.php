@@ -9,11 +9,14 @@
                 </x-icon-button>
                 <h1 class="text-2xl font-semibold text-acc-base-default">Manajemen Pengguna</h1>
             </div>
+
+            <a href="{{ route('users.create') }}">
             <x-primary-button><x-heroicon-m-plus class="w-[16px] h-auto" />Tambah Pengguna</x-primary-button>
+            </a>
         </div>
 
         <x-table subheading="" heading="" :columns="$columns" :rows="$rows" :showCheckbox="false"
-            :showActions="true"></x-table>
+            :showActions="true" editRoute="users.edit" deleteRoute="users.destroy"></x-table>
 
     </div>
 

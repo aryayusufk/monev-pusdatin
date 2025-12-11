@@ -7,7 +7,6 @@ use App\Http\Controllers\ActivityFileController;
 use App\Http\Controllers\ActivityNoteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BidangController;
-use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\SystemLogController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,7 +17,7 @@ Route::get('/', function () {
 // Semua route yang butuh login
 Route::middleware('auth')->group(function () {
 
-    Route::get('/configuration', [ConfigurationController::class, 'index'])->name('configuration');
+    Route::get('/systemlog', [SystemLogController::class, 'index'])->name('systemlog');
 
     // Profile (bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
