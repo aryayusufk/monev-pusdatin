@@ -29,7 +29,8 @@ class UpdateActivityRequest extends FormRequest
             'percepatan'    => ['sometimes','nullable','string','max:1000'],
             'proyeksi_kedepan' => ['sometimes','nullable','string','max:1000'],
 
-            'occurred_at'   => ['sometimes','date'],
+            //KALO INGIN MANUAL SOMETIMES GANTI JADI NULLABLE
+            'occurred_at'   => ['nullable','date'],
 
             'iku_ids'   => ['sometimes','array','min:1'],
             'iku_ids.*' => ['integer','exists:ikus,id'],

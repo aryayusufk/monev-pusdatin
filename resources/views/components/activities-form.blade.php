@@ -24,8 +24,9 @@
             @method('PUT')
         @endif
 
+        {{-- IKU --}}
         <div class="flex flex-col gap-2 w-full">
-            <x-input-label for="iku" :value="__('IKU')" />
+            <x-input-label for="iku_ids" :value="__('IKU')" />
             <div class="flex flex-row gap-2 items-center w-full">
                 <x-select-input id="iku" name="iku" class="block w-full">
                     <option value="" disabled {{ $selectedIkuId ? '' : 'selected' }}>Pilih IKU</option>
@@ -39,30 +40,35 @@
             </div>
         </div>
 
+        {{-- Kegiatan --}}
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="kegiatan" :value="__('Kegiatan')" />
             <x-text-input id="kegiatan" class="block w-full" type="text" name="kegiatan" :value="old('kegiatan', $isEdit ? $activity->kegiatan : '')" required
                 autofocus autocomplete="kegiatan" />
         </div>
 
+        {{-- Tindak Lanjut --}}
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="tindak_lanjut" :value="__('Tindak Lanjut')" />
             <x-textarea-input id="tindak_lanjut" class="block w-full h-20" name="tindak_lanjut"
                 required>{{ old('tindak_lanjut', $isEdit ? $activity->tindak_lanjut : '') }}</x-textarea-input>
         </div>
 
+        {{-- Kendala --}}
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="kendala" :value="__('Kendala')" />
             <x-textarea-input id="kendala" class="block w-full h-20" name="kendala"
                 required>{{ old('kendala', $isEdit ? $activity->kendala : '') }}</x-textarea-input>
         </div>
 
+        {{-- Percepatan --}}
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="percepatan" :value="__('Percepatan')" />
             <x-textarea-input id="percepatan" class="block w-full h-20" name="percepatan"
                 required>{{ old('percepatan', $isEdit ? $activity->percepatan : '') }}</x-textarea-input>
         </div>
 
+        {{-- File PDF (opsional) --}}
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="file_upload" :value="__('Data Pendukung & Nota Dinas (Opsional)')" />
             <x-file-input id="file_upload" class="block w-full" name="file_upload" />

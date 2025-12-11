@@ -39,9 +39,9 @@
         </div>
 
         <div class="flex flex-col gap-2 w-full">
-            <x-input-label for="target" :value="__('Target')" />
-            <x-text-input id="target" class="block w-full" type="number" name="target" :value="old('target', $iku->target ?? '')" required
-                autofocus autocomplete="target" />
+            <x-input-label for="tahun" :value="__('Tahun')" />
+            <x-text-input id="tahun" class="block w-full" type="number" name="tahun" :value="old('tahun', $iku->tahun ?? '')" required
+                autofocus autocomplete="tahun" />
         </div>
 
         <div class="flex flex-col gap-2 w-full">
