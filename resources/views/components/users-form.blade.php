@@ -3,6 +3,7 @@
     'buttonLabel' => 'Button Label',
     'roles' => [],
     'bidangs' => [],
+    'user' => null,
 ])
 
 <div class="flex flex-col w-full p-6 gap-6 rounded-lg bg-bg-base-default border border-bor-base-default">
@@ -13,19 +14,22 @@
         <h1 class="text-2xl font-semibold text-acc-base-default">{{ $title }}</h1>
     </div>
 
-    <form action="{{ route('users.store') }}" method="POST" enctype="multipart/form-data"
+    <form action="{{ $user ? route('users.update', $user) : route('users.store') }}" method="POST" enctype="multipart/form-data"
         class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
         @csrf
+        @if ($user)
+            @method('PUT')
+        @endif
 
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="name" :value="__('Nama')" />
-            <x-text-input id="name" class="block w-full" type="text" name="name" :value="old('name')" required
+            <x-text-input id="name" class="block w-full" type="text" name="name" :value="old('name', $user->name ?? '')" required
                 autofocus autocomplete="name" />
         </div>
 
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="username" :value="__('Username')" />
-            <x-text-input id="username" class="block w-full" type="text" name="username" :value="old('username')" required
+            <x-text-input id="username" class="block w-full" type="text" name="username" :value="old('username', $user->username ?? '')" required
                 autofocus autocomplete="username" />
         </div>
 
@@ -50,9 +54,9 @@
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="bidang_id" :value="__('Bidang')" />
             <x-select-input id="bidang_id" name="bidang_id" class="block w-full">
-                <option value="" disabled selected>Pilih Bidang</option>
+                <option value="" disabled @selected(!old('bidang_id', $user->bidang_id ?? null))>Pilih Bidang</option>
                 @foreach ($bidangs as $bidang)
-                    <option value="{{ $bidang->id }}" @selected(old('bidang_id') == $bidang->id)>{{ $bidang->nama }}
+                    <option value="{{ $bidang->id }}" @selected(old('bidang_id', $user->bidang_id ?? null) == $bidang->id)>{{ $bidang->nama }}
                     </option>
                 @endforeach
             </x-select-input>
