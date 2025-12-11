@@ -53,6 +53,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-bidang/mingguan/{year}/{week}', [ActivityController::class, 'weeklyShow'])
         ->name('reports.bidang.weekly.show');
 
+    Route::get('/laporan-bidang/bulanan/{year}/{month}', [ActivityController::class, 'monthlyShow'])
+        ->name('reports.bidang.monthly.show');
+    /*
+    |--------------------------------------------------------------------------
+    | Report PDF Export
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/laporan-bidang/mingguan/{year}/{week}/export',
+    [ActivityController::class, 'weeklyExport']
+    )->name('reports.bidang.weekly.export');
+
     /*
     |--------------------------------------------------------------------------
     | Activity Files (Data Pendukung / Lampiran PDF)

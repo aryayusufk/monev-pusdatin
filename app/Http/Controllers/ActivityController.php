@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use App\Http\Requests\StoreActivityRequest;
 use App\Http\Requests\UpdateActivityRequest;
 use App\Http\Requests\SelectQuarterlyRequest;
@@ -250,17 +252,38 @@ class ActivityController extends Controller
     {
         Gate::authorize('viewAny', Activity::class);
 
-        $user  = $request->user();
-        $year  = (int) ($request->input('year') ?: now()->year);
-        $month = $request->input('month'); // bisa null (semua bulan di tahun tsb)
+        $user   = $request->user();
+        $year   = (int) ($request->input('year') ?: now()->year);
+        $period = $request->input('period'); // 'month' atau 'quarter'
+        $value  = $request->input('value');  // jika month: 1-12, jika quarter: 1-4
 
+        $ikus    = Iku::orderBy('kode')->get();
+        $bidangs = Bidang::orderBy('nama')->get();
+
+        // Koleksi kosong default
+        $weeks  = collect(); // untuk tampilan mingguan
+        $months = collect(); // untuk tampilan bulanan (saat pilih triwulan)
+        $mode   = null;      // 'weekly' atau 'monthly' (FE bisa pakai ini)
+
+        // ============== JIKA FILTER BELUM LENGKAP ==============
+        // Tahun selalu ada (default), tapi period & value WAJIB dipilih dulu.
+        if (empty($period) || empty($value)) {
+            return view('reports.bidang.weekly-index', [
+                'year'    => $year,
+                'period'  => $period,
+                'value'   => $value,
+                'mode'    => $mode,
+                'weeks'   => $weeks,
+                'months'  => $months,
+                'ikus'    => $ikus,
+                'bidangs' => $bidangs,
+            ]);
+        }
+        // =======================================================
+
+        // Base query
         $query = Activity::query()
             ->where('year', $year);
-
-        // Filter bulan (kalau UI pilih bulan)
-        if (! empty($month)) {
-            $query->where('month', (int) $month);
-        }
 
         // Batasi per bidang sesuai role
         if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
@@ -271,37 +294,71 @@ class ActivityController extends Controller
             }
         }
 
-        // Filter IKU kalau dikirim dari UI
+        // Filter IKU
         if ($request->filled('iku_id')) {
             $ikuId = (int) $request->iku_id;
             $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
         }
 
-        // Ambil daftar minggu (iso_week) yang punya data
-        $weeks = $query
-            ->select('iso_week')
-            ->distinct()
-            ->orderBy('iso_week')
-            ->get()
-            ->map(function ($row) use ($year) {
-                return [
-                    'year'  => $year,
-                    'week'  => $row->iso_week,
-                    'label' => 'Laporan Minggu Ke - ' . $row->iso_week,
-                ];
-            });
+        // ============== PERIODE = BULAN (TAMPIL MINGGU) ==============
+        if ($period === 'month') {
+            $mode  = 'weekly';
+            $month = (int) $value;
 
-        $ikus    = Iku::orderBy('kode')->get();
-        $bidangs = Bidang::orderBy('nama')->get();
+            $queryMonth = (clone $query)->where('month', $month);
+
+            $weeks = $queryMonth
+                ->select('iso_week')
+                ->distinct()
+                ->orderBy('iso_week')
+                ->get()
+                ->map(function ($row) use ($year) {
+                    return [
+                        'year' => $year,
+                        'week' => $row->iso_week, // tetap iso_week untuk backend
+                    ];
+                });
+        }
+
+        // ============== PERIODE = TRIWULAN (TAMPIL BULAN) ==============
+        if ($period === 'quarter') {
+            $mode    = 'monthly';
+            $quarter = (int) $value;
+
+            // Q1: 1-3, Q2: 4-6, Q3: 7-9, Q4: 10-12
+            $startMonth = ($quarter - 1) * 3 + 1;
+            $endMonth   = $startMonth + 2;
+
+            $queryQuarter = (clone $query)->whereBetween('month', [$startMonth, $endMonth]);
+
+            $months = $queryQuarter
+                ->select('month')
+                ->distinct()
+                ->orderBy('month')
+                ->get()
+                ->map(function ($row) use ($year) {
+                    $m   = $row->month;
+                    $dt  = Carbon::createFromDate($year, $m, 1);
+                    return [
+                        'year'  => $year,
+                        'month' => $m,
+                        'label' => $dt->translatedFormat('F'), // Nama bulan (Januari, dst)
+                    ];
+                });
+        }
 
         return view('reports.bidang.weekly-index', [
             'year'    => $year,
-            'month'   => $month,
+            'period'  => $period,
+            'value'   => $value,
+            'mode'    => $mode,
             'weeks'   => $weeks,
+            'months'  => $months,
             'ikus'    => $ikus,
             'bidangs' => $bidangs,
         ]);
     }
+
 
     /**
      * Laporan Mingguan per Bidang - isi 1 minggu tertentu
@@ -354,6 +411,111 @@ class ActivityController extends Controller
             'year' => $year,
             'week' => $week,
             'rows' => $rows,
+        ]);
+    }
+
+    public function weeklyExport(Request $request, int $year, int $week)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $user = $request->user();
+
+        // Query Activities untuk minggu tersebut
+        $query = Activity::with(['bidang', 'files', 'ikus'])
+            ->where('year', $year)
+            ->where('iso_week', $week);
+
+        // Filter bidang jika user_bidang atau monev_bidang
+        if ($user->hasRole('user_bidang') || $user->hasRole('monev_bidang')) {
+            $query->where('bidang_id', $user->bidang_id);
+        }
+
+        // Filter IKU jika ada
+        if ($request->filled('iku_id')) {
+            $ikuId = (int) $request->iku_id;
+            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+        }
+
+        $activities = $query->orderBy('occurred_at')->get();
+
+        // Hitung teks periode untuk header PDF
+        if ($activities->isNotEmpty()) {
+            $start = Carbon::parse($activities->min('occurred_at'));
+            $end   = Carbon::parse($activities->max('occurred_at'));
+
+            if ($start->isSameMonth($end)) {
+                $periode = $start->translatedFormat('d') . ' - ' . $end->translatedFormat('d F Y');
+            } else {
+                $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
+            }
+        } else {
+            $periode = '-';
+        }
+
+        // Generate PDF
+        $pdf = Pdf::loadView('reports.bidang.weekly-pdf', [
+            'year'        => $year,
+            'week'        => $week,
+            'periode'     => $periode,
+            'activities'  => $activities,
+        ])->setPaper('a4', 'landscape');
+
+        $filename = "Laporan-Mingguan-{$year}-Minggu-{$week}.pdf";
+
+        return $pdf->download($filename);
+    }
+
+
+    public function monthlyShow(Request $request, int $year, int $month)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $user = $request->user();
+
+        $query = Activity::with('files')
+            ->where('year', $year)
+            ->where('month', $month);
+
+        // Batasi per bidang sesuai role
+        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
+            $query->where('bidang_id', $user->bidang_id);
+        } else {
+            if ($request->filled('bidang_id')) {
+                $query->where('bidang_id', (int) $request->bidang_id);
+            }
+        }
+
+        // Filter IKU kalau mau (opsional)
+        if ($request->filled('iku_id')) {
+            $ikuId = (int) $request->iku_id;
+            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+        }
+
+        $activities = $query
+            ->orderBy('occurred_at')
+            ->get();
+
+        $rows = $activities->map(function (Activity $act) {
+            $file = $act->files->first(); // asumsi 1 file utama
+
+            return [
+                'id'            => $act->id,
+                'kegiatan'      => $act->kegiatan,
+                'tindak_lanjut' => $act->tindak_lanjut ?? '-',
+                'kendala'       => $act->kendala ?? '-',
+                'percepatan'    => $act->percepatan ?? '-',
+                'file_name'     => $file?->original_name ?? '-',
+                'file_url'      => $file ? route('files.download', $file->id) : null,
+            ];
+        });
+
+        $dt = Carbon::createFromDate($year, $month, 1);
+
+        return view('reports.bidang.monthly-show', [
+            'year'  => $year,
+            'month' => $month,
+            'month_label' => $dt->translatedFormat('F'),
+            'rows'  => $rows,
         ]);
     }
 }
