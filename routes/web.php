@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/ikus', [IkuController::class, 'store'])->name('ikus.store');
     Route::get('/ikus/{iku}/edit', [IkuController::class, 'edit'])->name('ikus.edit');
     Route::put('/ikus/{iku}', [IkuController::class, 'update'])->name('ikus.update');
+    Route::delete('/ikus/{iku}', [IkuController::class, 'destroy'])->name('ikus.destroy');
     Route::patch('/ikus/{iku}/toggle-active', [IkuController::class, 'toggleActive'])->name('ikus.toggle-active');
 
     /*
