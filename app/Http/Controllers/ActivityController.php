@@ -22,13 +22,13 @@ class ActivityController extends Controller
 
         $user = $request->user();
 
-        $q = Activity::with(['bidang','ikus'])
+        $q = Activity::with(['bidang', 'ikus', 'files'])
             ->when($request->search, function ($query, $s) {
                 $query->where(function ($w) use ($s) {
                     $w->where('kegiatan', 'ilike', "%{$s}%")
-                      ->orWhere('tindak_lanjut', 'ilike', "%{$s}%")
-                      ->orWhere('kendala', 'ilike', "%{$s}%")
-                      ->orWhere('percepatan', 'ilike', "%{$s}%");
+                        ->orWhere('tindak_lanjut', 'ilike', "%{$s}%")
+                        ->orWhere('kendala', 'ilike', "%{$s}%")
+                        ->orWhere('percepatan', 'ilike', "%{$s}%");
                 });
             })
             ->when($request->year, fn($x, $y) => $x->ofYear((int)$y))
@@ -47,12 +47,44 @@ class ActivityController extends Controller
 
         $activities = $q->orderBy('occurred_at', 'desc')->paginate(20)->withQueryString();
 
+        $columns = [
+            'Kegiatan',
+            'Tindak Lanjut',
+            'Kendala',
+            'Percepatan',
+            'Data Pendukung & Nota Dinas',
+        ];
+
+        $rows = $activities->getCollection()->map(function (Activity $act) {
+            // kalau di index perlu file, pastikan relasi files di-load (lihat catatan di bawah)
+            $file = $act->files?->first();
+
+            $dataPendukung = '-';
+            if ($file) {
+                $url = route('files.download', $file->id);
+                $dataPendukung = '<a href="' . $url . '" class="text-acc-base-default hover:underline">'
+                    . e($file->original_name)
+                    . '</a>';
+            }
+
+            return [
+                'id' => $act->id,
+                'kegiatan' => e($act->kegiatan),
+                'tindak_lanjut' => e($act->tindak_lanjut ?? '-'),
+                'kendala' => e($act->kendala ?? '-'),
+                'percepatan' => e($act->percepatan ?? '-'),
+                'data_pendukung' => $dataPendukung,
+            ];
+        })->values()->toArray();
+
         $ikus    = Iku::orderBy('kode')->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
         return view('activities.index', [
             'activities' => $activities,
-            'filters'    => $request->only(['search','year','month','quarter','iso_week','iku_id','selected_quarterly']),
+            'columns'    => $columns,
+            'rows'       => $rows,
+            'filters'    => $request->only(['search', 'year', 'month', 'quarter', 'iso_week', 'iku_id', 'selected_quarterly']),
             'ikus'       => $ikus,
             'bidangs'    => $bidangs,
         ]);
@@ -74,7 +106,7 @@ class ActivityController extends Controller
         $ikus    = $ikusQuery->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
-        return view('activities.create', compact('ikus','bidangs','user'));
+        return view('activities.create', compact('ikus', 'bidangs', 'user'));
     }
 
     public function store(StoreActivityRequest $request)
@@ -116,7 +148,7 @@ class ActivityController extends Controller
         SystemLog::write(
             'activity.created',
             "{$user->name} ({$roleStr} - {$bidangName}) membuat laporan kegiatan: " .
-            str($activity->kegiatan)->limit(80)
+                str($activity->kegiatan)->limit(80)
         );
 
         return redirect()
@@ -128,7 +160,7 @@ class ActivityController extends Controller
     {
         $this->authorize('view', $activity);
 
-        $activity->load(['bidang','ikus','files']);
+        $activity->load(['bidang', 'ikus', 'files']);
 
         return view('activities.show', compact('activity'));
     }
@@ -149,7 +181,7 @@ class ActivityController extends Controller
 
         $activity->load('ikus');
 
-        return view('activities.edit', compact('activity','ikus','bidangs','user'));
+        return view('activities.edit', compact('activity', 'ikus', 'bidangs', 'user'));
     }
 
     public function update(UpdateActivityRequest $request, Activity $activity)
@@ -297,7 +329,7 @@ class ActivityController extends Controller
         // Filter IKU
         if ($request->filled('iku_id')) {
             $ikuId = (int) $request->iku_id;
-            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+            $query->whereHas('ikus', fn($q) => $q->where('ikus.id', $ikuId));
         }
 
         // ============== PERIODE = BULAN (TAMPIL MINGGU) ==============
@@ -386,7 +418,7 @@ class ActivityController extends Controller
         // Filter IKU kalau ada
         if ($request->filled('iku_id')) {
             $ikuId = (int) $request->iku_id;
-            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+            $query->whereHas('ikus', fn($q) => $q->where('ikus.id', $ikuId));
         }
 
         $activities = $query
@@ -433,7 +465,7 @@ class ActivityController extends Controller
         // Filter IKU jika ada
         if ($request->filled('iku_id')) {
             $ikuId = (int) $request->iku_id;
-            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+            $query->whereHas('ikus', fn($q) => $q->where('ikus.id', $ikuId));
         }
 
         $activities = $query->orderBy('occurred_at')->get();
@@ -488,7 +520,7 @@ class ActivityController extends Controller
         // Filter IKU kalau mau (opsional)
         if ($request->filled('iku_id')) {
             $ikuId = (int) $request->iku_id;
-            $query->whereHas('ikus', fn ($q) => $q->where('ikus.id', $ikuId));
+            $query->whereHas('ikus', fn($q) => $q->where('ikus.id', $ikuId));
         }
 
         $activities = $query
