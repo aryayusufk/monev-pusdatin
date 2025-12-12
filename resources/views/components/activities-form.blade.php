@@ -9,7 +9,9 @@
     use Illuminate\Support\Str;
 
     $isEdit = isset($activity) && $activity;
-    $selectedIkuId = old('iku', $isEdit ? $activity->iku_id : null);
+    $selectedIkuIds = collect(old('iku_ids', $isEdit ? $activity->ikus->pluck('id')->all() : []))
+        ->map(fn($v) => (int) $v)
+        ->all();
 @endphp
 
 <div class="flex flex-col w-full p-6 gap-6 rounded-xl bg-bg-base-default border border-bor-base-default">
@@ -28,10 +30,9 @@
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="iku_ids" :value="__('IKU')" />
             <div class="flex flex-row gap-2 items-center w-full">
-                <x-select-input id="iku" name="iku" class="block w-full">
-                    <option value="" disabled {{ $selectedIkuId ? '' : 'selected' }}>Pilih IKU</option>
+                <x-select-input id="iku_ids" name="iku_ids[]" class="block w-full" multiple>
                     @foreach ($ikus as $iku)
-                        <option value="{{ $iku->id }}" @selected($selectedIkuId == $iku->id)>
+                        <option value="{{ $iku->id }}" @selected(in_array($iku->id, $selectedIkuIds))>
                             {{ $iku->kode }} - {{ Str::limit($iku->nama, 125) }}
                         </option>
                     @endforeach
