@@ -27,19 +27,19 @@
         <!-- Table Header -->
         <table class="table-fixed w-full">
             <thead>
-                <tr class="flex flex-row flex-1 p-4 gap-4 border-b border-bor-base-default">
+                <tr class="flex flex-row flex-1 items-center p-4 gap-4 border-b border-bor-base-default">
+                    @foreach ($columns as $column)
+                        <th class="w-full text-left text-sm font-semibold text-txt-base-primary">
+                            {{ $column }}
+                        </th>
+                    @endforeach
+
                     @if ($showCheckbox)
                         <th class="shrink-0 w-6 flex items-center justify-center">
                             <input type="checkbox"
                                 class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
                         </th>
                     @endif
-
-                    @foreach ($columns as $column)
-                        <th class="w-full text-left text-sm font-semibold text-txt-base-primary">
-                            {{ $column }}
-                        </th>
-                    @endforeach
 
                     @if ($showActions)
                         <th class="shrink-0 w-8"></th>
