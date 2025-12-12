@@ -120,7 +120,7 @@ class ActivityController extends Controller
         );
 
         return redirect()
-            ->route('activities.show', $activity)
+            ->route('activities.index', $activity)
             ->with('success', 'Laporan kegiatan berhasil dibuat.');
     }
 
@@ -189,7 +189,7 @@ class ActivityController extends Controller
         );
 
         return redirect()
-            ->route('activities.show', $activity)
+            ->route('activities.index', $activity)
             ->with('success', 'Laporan kegiatan berhasil diperbarui.');
     }
 
