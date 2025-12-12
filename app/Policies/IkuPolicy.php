@@ -36,6 +36,13 @@ class IkuPolicy
             || $user->hasRole('sekre_pimpinan');
     }
 
+    public function delete(User $user, Iku $iku): bool
+    {
+        return $user->hasRole('super_admin')
+            || $user->hasRole('tim_monev')
+            || $user->hasRole('sekre_pimpinan');
+    }
+
     /**
      * Kalau suatu saat kamu pakai $this->authorize('view', $iku)
      */
@@ -50,11 +57,6 @@ class IkuPolicy
     }
 
     public function update(User $user, Iku $iku): bool
-    {
-        return $this->manage($user);
-    }
-
-    public function delete(User $user, Iku $iku): bool
     {
         return $this->manage($user);
     }

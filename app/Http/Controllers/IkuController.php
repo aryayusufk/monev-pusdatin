@@ -158,6 +158,29 @@ class IkuController extends Controller
             ->with('success', 'IKU berhasil diperbarui.');
     }
 
+    public function destroy(Request $request, Iku $iku)
+    {
+        $this->authorize('delete', $iku);
+
+        $actor   = $request->user();
+        $roleStr = $actor->roles->pluck('name')->join(', ');
+
+        $kode = $iku->kode;
+        $nama = $iku->nama;
+
+        $iku->delete(); // soft delete
+
+        SystemLog::write(
+            'iku.deleted',
+            "{$actor->name} ({$roleStr}) menghapus IKU: [{$kode}] {$nama}"
+        );
+
+        return redirect()
+            ->route('ikus.index')
+            ->with('success', 'IKU berhasil dihapus.');
+    }
+
+
 
     public function toggleActive(Request $request, Iku $iku)
     {
