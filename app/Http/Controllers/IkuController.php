@@ -6,6 +6,8 @@ use App\Models\Iku;
 use App\Models\Bidang;
 use App\Models\SystemLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class IkuController extends Controller
 {
@@ -28,12 +30,11 @@ class IkuController extends Controller
 
         $rows = collect($ikus->items())->map(function (Iku $iku) {
             return [
-                // id dipakai untuk checkbox / action di komponen tabel
-                'id'         => $iku->id,
-                'nama'       => $iku->nama,
+                'id'        => $iku->id,
+                'nama'      => $iku->nama,
                 'tahun'     => $iku->tahun ?? '-',
-                'deskripsi'  => $iku->deskripsi ?? '-',
-                'bidangs'    => $iku->bidangs->pluck('nama')->join(', ') ?: '-',
+                'deskripsi' => $iku->deskripsi ?? '-',
+                'bidangs'   => $iku->bidangs->pluck('nama')->join(', ') ?: '-',
             ];
         });
 
@@ -56,15 +57,44 @@ class IkuController extends Controller
         ]);
     }
 
+    /**
+     * Generator KODE IKU (PostgreSQL safe):
+     * - Ambil 1 record kode terbesar (ORDER BY numeric part DESC LIMIT 1)
+     * - lockForUpdate() supaya aman untuk concurrent requests
+     * - include soft deleted (withTrashed) agar kode tidak pernah reuse
+     *
+     * Catatan:
+     * LOCK hanya mengunci baris "terbesar" yang ditemukan. Kalau tabel kosong, tidak ada baris untuk di-lock.
+     * Itu tetap aman untuk kebanyakan kasus, dan kita tambah retry sebagai safety net.
+     */
+    private function generateKodeIkuLocked(): string
+    {
+        $lastKode = Iku::withTrashed()
+            ->select('kode')
+            ->orderByRaw("CAST(SUBSTRING(kode, 5) AS INTEGER) DESC")
+            ->lockForUpdate()
+            ->value('kode');
+
+        $lastNumber = 0;
+
+        if (!empty($lastKode)) {
+            // "IKU-004" -> 4
+            $lastNumber = (int) substr($lastKode, 4);
+        }
+
+        $nextNumber = $lastNumber + 1;
+
+        return 'IKU-' . str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('create', Iku::class);
 
         $data = $request->validate([
-            // TIDAK lagi minta 'kode' dari form
             'nama'          => ['required', 'string', 'max:255'],
             'deskripsi'     => ['nullable', 'string'],
-            'tahun'        => ['required', 'integer', 'min:2000', 'max:2100'],
+            'tahun'         => ['required', 'integer', 'min:2000', 'max:2100'],
             'is_active'     => ['nullable', 'boolean'],
             'bidang_ids'    => ['nullable', 'array'],
             'bidang_ids.*'  => ['integer', 'exists:bidangs,id'],
@@ -72,36 +102,57 @@ class IkuController extends Controller
 
         $data['is_active'] = $data['is_active'] ?? false;
 
-        // === Generate KODE IKU otomatis ===
-        // contoh: IKU-001, IKU-002, dst
-        $lastId = Iku::max('id') ?? 0;
-        $nextNumber = $lastId + 1;
-        $kodeAuto = 'IKU-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        // retry untuk safety net jika ada tabrakan unik (sangat jarang)
+        $maxAttempts = 5;
+        $attempt = 0;
 
-        $iku = Iku::create([
-            'kode'      => $kodeAuto,
-            'nama'      => $data['nama'],
-            'deskripsi' => $data['deskripsi'] ?? null,
-            'tahun'    => $data['tahun'] ?? null,
-            'is_active' => $data['is_active'],
-        ]);
+        while (true) {
+            try {
+                $iku = DB::transaction(function () use ($data) {
 
-        $iku->bidangs()->sync($data['bidang_ids'] ?? []);
+                    $kodeAuto = $this->generateKodeIkuLocked();
 
-        // ===== LOG IKU CREATED =====
-        $actor   = $request->user();
-        $roleStr = $actor->roles->pluck('name')->join(', ');
+                    $iku = Iku::create([
+                        'kode'      => $kodeAuto,
+                        'nama'      => $data['nama'],
+                        'deskripsi' => $data['deskripsi'] ?? null,
+                        'tahun'     => $data['tahun'],
+                        'is_active' => $data['is_active'],
+                    ]);
 
-        SystemLog::write(
-            'iku.created',
-            "{$actor->name} ({$roleStr}) membuat IKU baru: [{$iku->kode}] {$iku->nama}"
-        );
+                    $iku->bidangs()->sync($data['bidang_ids'] ?? []);
 
-        return redirect()
-            ->route('ikus.index')
-            ->with('success', 'IKU berhasil dibuat.');
+                    return $iku;
+                });
+
+                // ===== LOG IKU CREATED =====
+                $actor   = $request->user();
+                $roleStr = $actor->roles->pluck('name')->join(', ');
+
+                SystemLog::write(
+                    'iku.created',
+                    "{$actor->name} ({$roleStr}) membuat IKU baru: [{$iku->kode}] {$iku->nama}"
+                );
+
+                return redirect()
+                    ->route('ikus.index')
+                    ->with('success', 'IKU berhasil dibuat.');
+
+            } catch (QueryException $e) {
+                // PostgreSQL unique violation = 23505
+                $sqlState = $e->errorInfo[0] ?? null;
+
+                if ($sqlState === '23505' && str_contains($e->getMessage(), 'ikus_kode_unique')) {
+                    $attempt++;
+                    if ($attempt < $maxAttempts) {
+                        continue; // coba ulang generate kode
+                    }
+                }
+
+                throw $e;
+            }
+        }
     }
-
 
     public function edit(Request $request, Iku $iku)
     {
@@ -123,10 +174,9 @@ class IkuController extends Controller
         $this->authorize('update', $iku);
 
         $data = $request->validate([
-            // 'kode' tidak diminta dari form
             'nama'          => ['required', 'string', 'max:255'],
             'deskripsi'     => ['nullable', 'string'],
-            'tahun'        => ['required', 'integer', 'min:2000', 'max:2100'],
+            'tahun'         => ['required', 'integer', 'min:2000', 'max:2100'],
             'is_active'     => ['nullable', 'boolean'],
             'bidang_ids'    => ['nullable', 'array'],
             'bidang_ids.*'  => ['integer', 'exists:bidangs,id'],
@@ -135,16 +185,15 @@ class IkuController extends Controller
         $data['is_active'] = $data['is_active'] ?? false;
 
         $iku->update([
-            // kode tetap pakai yang lama
             'nama'      => $data['nama'],
             'deskripsi' => $data['deskripsi'] ?? null,
-            'tahun'    => $data['tahun'] ?? null,
+            'tahun'     => $data['tahun'],
             'is_active' => $data['is_active'],
         ]);
 
         $iku->bidangs()->sync($data['bidang_ids'] ?? []);
 
-                // ===== LOG IKU UPDATED =====
+        // ===== LOG IKU UPDATED =====
         $actor   = $request->user();
         $roleStr = $actor->roles->pluck('name')->join(', ');
 
@@ -180,8 +229,6 @@ class IkuController extends Controller
             ->with('success', 'IKU berhasil dihapus.');
     }
 
-
-
     public function toggleActive(Request $request, Iku $iku)
     {
         $user = $request->user();
@@ -190,7 +237,7 @@ class IkuController extends Controller
         $iku->is_active = ! $iku->is_active;
         $iku->save();
 
-             // ===== LOG IKU TOGGLE ACTIVE =====
+        // ===== LOG IKU TOGGLE ACTIVE =====
         $status  = $iku->is_active ? 'aktif' : 'non-aktif';
         $actor   = $request->user();
         $roleStr = $actor->roles->pluck('name')->join(', ');
