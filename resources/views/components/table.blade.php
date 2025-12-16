@@ -55,14 +55,6 @@
                     @forelse($rows as $rowIndex => $row)
                         <tr
                             class="flex flex-row flex-1 gap-4 px-4 py-4 border-b border-bor-base-default last:border-b-0">
-                            @if ($showCheckbox)
-                                <td class="shrink-0 w-6 flex items-start justify-center pt-1">
-                                    <input type="checkbox" name="{{ $checkboxName }}[]"
-                                        value="{{ $row['id'] ?? $rowIndex }}"
-                                        class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
-                                </td>
-                            @endif
-
                             {{-- Sel data --}}
                             @foreach ($row as $key => $cell)
                                 @continue($key === 'id') {{-- id hanya dipakai untuk value checkbox / action --}}
@@ -75,6 +67,14 @@
                                     {!! $cell !!}
                                 </td>
                             @endforeach
+
+                            @if ($showCheckbox)
+                                <td class="shrink-0 w-6 flex items-start justify-center pt-1">
+                                    <input type="checkbox" name="{{ $checkboxName }}[]"
+                                        value="{{ $row['id'] ?? $rowIndex }}"
+                                        class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
+                                </td>
+                            @endif
 
                             @if ($showActions)
                                 <td class="flex flex-col items-center justify-end gap-2">
