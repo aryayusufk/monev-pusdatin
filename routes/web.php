@@ -47,13 +47,13 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/laporan-bidang/mingguan', [ActivityController::class, 'weeklyIndex'])
-        ->name('reports.bidang.weekly.index');
+        ->name('reports.bidang.index');
 
-    Route::get('/laporan-bidang/mingguan/{year}/{week}', [ActivityController::class, 'weeklyShow'])
-        ->name('reports.bidang.weekly.show');
+    Route::get('/laporan-bidang/mingguan/{year}/{week}', [ActivityController::class, 'weeklyReport'])
+        ->name('reports.bidang.weekly.report');
 
-    Route::get('/laporan-bidang/bulanan/{year}/{month}', [ActivityController::class, 'monthlyShow'])
-        ->name('reports.bidang.monthly.show');
+    Route::get('/laporan-bidang/bulanan/{year}/{month}', [ActivityController::class, 'monthlyReport'])
+        ->name('reports.bidang.monthly.report');
     /*
     |--------------------------------------------------------------------------
     | Report PDF Export

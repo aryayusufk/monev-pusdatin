@@ -300,7 +300,7 @@ class ActivityController extends Controller
         // ============== JIKA FILTER BELUM LENGKAP ==============
         // Tahun selalu ada (default), tapi period & value WAJIB dipilih dulu.
         if (empty($period) || empty($value)) {
-            return view('reports.bidang.weekly-index', [
+            return view('reports.bidang.index', [
                 'year'    => $year,
                 'period'  => $period,
                 'value'   => $value,
@@ -379,7 +379,7 @@ class ActivityController extends Controller
                 });
         }
 
-        return view('reports.bidang.weekly-index', [
+        return view('reports.bidang.index', [
             'year'    => $year,
             'period'  => $period,
             'value'   => $value,
@@ -396,7 +396,7 @@ class ActivityController extends Controller
      * Laporan Mingguan per Bidang - isi 1 minggu tertentu
      * URL contoh: /laporan-bidang/mingguan/2025/1
      */
-    public function weeklyShow(Request $request, int $year, int $week)
+    public function weeklyReport(Request $request, int $year, int $week)
     {
         Gate::authorize('viewAny', Activity::class);
 
@@ -439,7 +439,7 @@ class ActivityController extends Controller
             ];
         });
 
-        return view('reports.bidang.weekly-show', [
+        return view('reports.bidang.weekly-report', [
             'year' => $year,
             'week' => $week,
             'rows' => $rows,
@@ -498,7 +498,7 @@ class ActivityController extends Controller
     }
 
 
-    public function monthlyShow(Request $request, int $year, int $month)
+    public function monthlyReport(Request $request, int $year, int $month)
     {
         Gate::authorize('viewAny', Activity::class);
 
@@ -543,7 +543,7 @@ class ActivityController extends Controller
 
         $dt = Carbon::createFromDate($year, $month, 1);
 
-        return view('reports.bidang.monthly-show', [
+        return view('reports.bidang.monthly-report', [
             'year'  => $year,
             'month' => $month,
             'month_label' => $dt->translatedFormat('F'),
