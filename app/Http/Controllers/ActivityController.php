@@ -117,6 +117,28 @@ class ActivityController extends Controller
         ]);
     }
 
+    private function storeOptionalPdf(Activity $activity, Request $request): void
+    {
+        if (! $request->hasFile('file_upload')) {
+            return;
+        }
+
+        $file = $request->file('file_upload');
+
+        if (! $file || ! $file->isValid()) {
+            return;
+        }
+
+        $path = $file->store("activities/{$activity->id}", 'public');
+
+        $activity->files()->create([
+            'path'          => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type'     => $file->getMimeType(),
+            'size'          => $file->getSize(),
+        ]);
+    }
+
     public function create(Request $request)
     {
         Gate::authorize('create', Activity::class);
@@ -156,6 +178,7 @@ class ActivityController extends Controller
 
         // Buat record activity
         $activity = Activity::create($data);
+        $this->storeOptionalPdf($activity, $request);
 
         // Sinkronisasi relasi IKU (kalau ada di form)
         if (! empty($data['iku_ids'])) {
@@ -227,6 +250,7 @@ class ActivityController extends Controller
         $data['updated_by'] = $user->id;
 
         $activity->update($data);
+        $this->storeOptionalPdf($activity, $request);
 
         if (! empty($data['iku_ids'])) {
             $syncData = [];

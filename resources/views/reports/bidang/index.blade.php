@@ -40,7 +40,7 @@
                     $periodSelected = filled(request('period'));
                 @endphp
 
-                <x-select-input name="value" class="w-full whitespace-normal" onchange="this.form.submit()"
+                <x-select-input name="value" class="w-full" onchange="this.form.submit()"
                     :disabled="!$periodSelected">
                     <option value="">
                         {{ $periodSelected ? 'Value' : 'Pilih Periode terlebih dahulu' }}
@@ -98,7 +98,7 @@
             @endif
         </div>
 
-        <div class="flex flex-col gap-3 w-full">
+        <div class="flex flex-col gap-3 w-full items-center">
             @forelse ($cards as $card)
                 @php
                     $params = array_filter(
@@ -115,7 +115,7 @@
 
                 <x-card :href="route('activities.index', $params)" :title="$card['title']" :subtitle="$card['subtitle']" />
             @empty
-                <div class="text-sm text-txt-base-secondary">
+                <div class="text-sm text-txt-base-default">
                     Pilih Tahun, Periode, dan Value untuk menampilkan daftar laporan.
                 </div>
             @endforelse

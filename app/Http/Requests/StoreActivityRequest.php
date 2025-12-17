@@ -30,6 +30,8 @@ class StoreActivityRequest extends FormRequest
 
             'contribution'   => ['nullable','array'],
             'contribution.*' => ['nullable','integer','min:0','max:100'],
+
+            'file_upload' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ];
 
         // HANYA role pusat yang wajib pilih bidang manual.
