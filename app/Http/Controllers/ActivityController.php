@@ -23,6 +23,13 @@ class ActivityController extends Controller
         $user = $request->user();
 
         $q = Activity::with(['bidang', 'ikus', 'files'])
+            ->when($request->filled('start') && $request->filled('end'), function ($x) use ($request) {
+                $x->whereBetween('occurred_at', [
+                    Carbon::parse($request->start)->startOfDay(),
+                    Carbon::parse($request->end)->endOfDay(),
+                ]);
+            })
+
             ->when($request->search, function ($query, $s) {
                 $query->where(function ($w) use ($s) {
                     $w->where('kegiatan', 'ilike', "%{$s}%")
@@ -43,7 +50,12 @@ class ActivityController extends Controller
         // user bidang & monev bidang hanya boleh lihat bidang sendiri
         if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
             $q->where('bidang_id', $user->bidang_id);
+        } else {
+            if ($request->filled('bidang_id')) {
+                $q->where('bidang_id', (int) $request->bidang_id);
+            }
         }
+
 
         $activities = $q->orderBy('occurred_at', 'desc')->paginate(20)->withQueryString();
 
@@ -80,6 +92,20 @@ class ActivityController extends Controller
         $ikus    = Iku::orderBy('kode')->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
+        $bidangName = null;
+
+        if ($request->filled('bidang_id')) {
+            $bidangName = \App\Models\Bidang::find($request->bidang_id)?->nama;
+        } elseif ($request->user()?->bidang_id) {
+            $bidangName = \App\Models\Bidang::find($request->user()->bidang_id)?->nama;
+        }
+
+        $titleFromReq = $request->filled('title') ? mb_substr($request->title, 0, 80) : null;
+
+        $pageTitle = $request->filled('title')
+            ? trim($request->title . ($bidangName ? " {$bidangName}" : ''))
+            : 'Laporan Kegiatan';
+
         return view('activities.index', [
             'activities' => $activities,
             'columns'    => $columns,
@@ -87,6 +113,7 @@ class ActivityController extends Controller
             'filters'    => $request->only(['search', 'year', 'month', 'quarter', 'iso_week', 'iku_id', 'selected_quarterly']),
             'ikus'       => $ikus,
             'bidangs'    => $bidangs,
+            'pageTitle' => $pageTitle,
         ]);
     }
 
@@ -276,6 +303,72 @@ class ActivityController extends Controller
             ->with('success', 'Status seleksi triwulan diperbarui.');
     }
 
+    private function resolveBidangId(Request $request): ?int
+    {
+        $user = $request->user();
+
+        // User bidang / monev bidang wajib hanya bidangnya sendiri
+        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
+            return (int) $user->bidang_id;
+        }
+
+        // Admin/super admin: boleh pilih via dropdown (query string)
+        if ($request->filled('bidang_id')) {
+            return (int) $request->bidang_id;
+        }
+
+        return null;
+    }
+
+    private function buildWeekCardsForMonth(int $year, int $month): array
+    {
+        $start = Carbon::create($year, $month, 1)->startOfDay();
+        $end   = Carbon::create($year, $month, 1)->endOfMonth()->endOfDay();
+
+        $cards = [];
+        $cursor = $start->copy();
+        $i = 1;
+
+        while ($cursor->lte($end)) {
+            $weekStart = $cursor->copy();
+            $weekEnd   = $cursor->copy()->addDays(6)->endOfDay();
+            if ($weekEnd->gt($end)) $weekEnd = $end->copy();
+
+            $cards[] = [
+                'title' => "Laporan Minggu Ke-{$i}",
+                'subtitle' => $weekStart->translatedFormat('d M Y') . ' - ' . $weekEnd->translatedFormat('d M Y'),
+                'start' => $weekStart->toDateString(),
+                'end' => $weekEnd->toDateString(),
+            ];
+
+            $cursor = $cursor->addDays(7)->startOfDay();
+            $i++;
+        }
+
+        return $cards;
+    }
+
+    private function buildMonthCardsForQuarter(int $year, int $quarter): array
+    {
+        $firstMonth = (($quarter - 1) * 3) + 1;
+
+        $cards = [];
+        for ($i = 0; $i < 3; $i++) {
+            $month = $firstMonth + $i;
+            $start = Carbon::create($year, $month, 1)->startOfDay();
+            $end   = Carbon::create($year, $month, 1)->endOfMonth()->endOfDay();
+
+            $cards[] = [
+                'title' => 'Laporan Bulan ' . $start->translatedFormat('F'),
+                'subtitle' => $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y'),
+                'start' => $start->toDateString(),
+                'end' => $end->toDateString(),
+            ];
+        }
+
+        return $cards;
+    }
+
     /**
      * Laporan Mingguan per Bidang - daftar minggu
      * URL contoh: /laporan-bidang/mingguan?year=2025&month=1
@@ -285,17 +378,54 @@ class ActivityController extends Controller
         Gate::authorize('viewAny', Activity::class);
 
         $user   = $request->user();
-        $year   = (int) ($request->input('year') ?: now()->year);
+
+        // Tahun dropdown: hanya tahun yang ada data + 1 tahun setelah tahun terbesar
+        $yearsInData = Activity::query()
+            ->select('year')
+            ->whereNotNull('year')
+            ->distinct()
+            ->orderBy('year', 'asc')
+            ->pluck('year');
+
+        if ($yearsInData->isEmpty()) {
+            $years = collect([now()->year, now()->year + 1]);
+        } else {
+            $maxYear = (int) $yearsInData->max();
+            $years = $yearsInData->values();
+            $years->push($maxYear + 1);
+        }
+
+        // default year = nilai request kalau ada, kalau tidak pakai tahun terakhir di dropdown
+        $year   = (int) $request->input('year', $years->last());
+
         $period = $request->input('period'); // 'month' atau 'quarter'
         $value  = $request->input('value');  // jika month: 1-12, jika quarter: 1-4
 
         $ikus    = Iku::orderBy('kode')->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
-        // Koleksi kosong default
-        $weeks  = collect(); // untuk tampilan mingguan
-        $months = collect(); // untuk tampilan bulanan (saat pilih triwulan)
-        $mode   = null;      // 'weekly' atau 'monthly' (FE bisa pakai ini)
+        $cards = [];
+
+        if (!empty($period) && !empty($value)) {
+            if ($period === 'month') {
+                $cards = $this->buildWeekCardsForMonth($year, (int) $value);
+            }
+
+            if ($period === 'quarter') {
+                $cards = $this->buildMonthCardsForQuarter($year, (int) $value);
+            }
+        }
+
+        return view('reports.bidang.index', [
+            'year'    => $year,
+            'years'   => $years,
+            'period'  => $period,
+            'value'   => $value,
+            'cards'   => $cards,
+            'ikus'    => $ikus,
+            'bidangs' => $bidangs,
+        ]);
+
 
         // ============== JIKA FILTER BELUM LENGKAP ==============
         // Tahun selalu ada (default), tapi period & value WAJIB dipilih dulu.
@@ -318,13 +448,11 @@ class ActivityController extends Controller
             ->where('year', $year);
 
         // Batasi per bidang sesuai role
-        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
-            $query->where('bidang_id', $user->bidang_id);
-        } else {
-            if ($request->filled('bidang_id')) {
-                $query->where('bidang_id', (int) $request->bidang_id);
-            }
+        $bidangId = $this->resolveBidangId($request);
+        if ($bidangId) {
+            $query->where('bidang_id', $bidangId);
         }
+
 
         // Filter IKU
         if ($request->filled('iku_id')) {
@@ -407,13 +535,11 @@ class ActivityController extends Controller
             ->where('iso_week', $week);
 
         // Batasi per bidang sesuai role
-        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
-            $query->where('bidang_id', $user->bidang_id);
-        } else {
-            if ($request->filled('bidang_id')) {
-                $query->where('bidang_id', (int) $request->bidang_id);
-            }
+        $bidangId = $this->resolveBidangId($request);
+        if ($bidangId) {
+            $query->where('bidang_id', $bidangId);
         }
+
 
         // Filter IKU kalau ada
         if ($request->filled('iku_id')) {
@@ -458,9 +584,11 @@ class ActivityController extends Controller
             ->where('iso_week', $week);
 
         // Filter bidang jika user_bidang atau monev_bidang
-        if ($user->hasRole('user_bidang') || $user->hasRole('monev_bidang')) {
-            $query->where('bidang_id', $user->bidang_id);
+        $bidangId = $this->resolveBidangId($request);
+        if ($bidangId) {
+            $query->where('bidang_id', $bidangId);
         }
+
 
         // Filter IKU jika ada
         if ($request->filled('iku_id')) {
@@ -509,13 +637,11 @@ class ActivityController extends Controller
             ->where('month', $month);
 
         // Batasi per bidang sesuai role
-        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
-            $query->where('bidang_id', $user->bidang_id);
-        } else {
-            if ($request->filled('bidang_id')) {
-                $query->where('bidang_id', (int) $request->bidang_id);
-            }
+        $bidangId = $this->resolveBidangId($request);
+        if ($bidangId) {
+            $query->where('bidang_id', $bidangId);
         }
+
 
         // Filter IKU kalau mau (opsional)
         if ($request->filled('iku_id')) {

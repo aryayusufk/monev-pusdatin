@@ -11,10 +11,28 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false }">
-                    <x-nav-link href="#" :active="false">
-                        Laporan Bidang
-                    </x-nav-link>
+                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false, openLaporanBidang: false }">
+
+                    <button type="button" @click="openLaporanBidang = !openLaporanBidang"
+                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                        <span>Laporan Bidang</span>
+                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
+                            x-bind:class="openLaporanBidang ? 'rotate-180' : ''" />
+                    </button>
+
+                    <div x-show="openLaporanBidang" x-collapse class="flex flex-col gap-2 p-2">
+                        @forelse ($navBidangs as $bidang)
+                            <x-nav-link :href="route('reports.bidang.index', ['bidang_id' => $bidang->id])" :active="request()->routeIs('reports.bidang.index') &&
+                                (int) request('bidang_id') === $bidang->id">
+                                {{ $bidang->nama }}
+                            </x-nav-link>
+                        @empty
+                            <div class="text-sm text-txt-base-default">
+                                Belum ada bidang
+                            </div>
+                        @endforelse
+                    </div>
+
                     <x-nav-link href="#" :active="false">
                         Laporan Monitoring & Evaluasi
                     </x-nav-link>
@@ -24,10 +42,12 @@
                     <x-nav-link :href="route('systemlog')" :active="request()->routeIs('systemlog')">
                         {{ __('Catatan Aktivitas') }}
                     </x-nav-link>
+
                     <button type="button" @click="openKonfigurasi = !openKonfigurasi"
                         class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
                         <span>Konfigurasi</span>
-                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition" x-bind:class="openKonfigurasi ? 'rotate-180' : ''" />
+                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
+                            x-bind:class="openKonfigurasi ? 'rotate-180' : ''" />
                     </button>
 
                     <div x-show="openKonfigurasi" x-collapse class="flex flex-col gap-2 p-2">
