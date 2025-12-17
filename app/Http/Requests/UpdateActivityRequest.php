@@ -37,6 +37,8 @@ class UpdateActivityRequest extends FormRequest
 
             'contribution'   => ['nullable','array'],
             'contribution.*' => ['nullable','integer','min:0','max:100'],
+
+            'file_upload' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ];
     }
 }
