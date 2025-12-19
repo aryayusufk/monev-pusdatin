@@ -10,27 +10,27 @@ class Activity extends Model
 {
     use HasFactory, SoftDeletes;
 
-    
+
     protected $fillable = [
-    'bidang_id',
-    'kegiatan',
-    'tindak_lanjut',
-    'kendala',
-    'percepatan',
-    'proyeksi_kedepan',
-    'occurred_at',
-    'year',
-    'month',
-    'quarter',
-    'iso_week',
-    'status',
-    'is_selected_quarterly',
-    'selected_quarterly_scope',
-    'selected_quarterly_by',
-    'selected_quarterly_at',
-    'created_by',
-    'updated_by',
-];
+        'bidang_id',
+        'kegiatan',
+        'tindak_lanjut',
+        'kendala',
+        'percepatan',
+        'proyeksi_kedepan',
+        'occurred_at',
+        'year',
+        'month',
+        'quarter',
+        'iso_week',
+        'status',
+        'is_selected_quarterly',
+        'selected_quarterly_scope',
+        'selected_quarterly_by',
+        'selected_quarterly_at',
+        'created_by',
+        'updated_by',
+    ];
 
     protected $casts = [
         'occurred_at'            => 'datetime',
@@ -101,9 +101,8 @@ class Activity extends Model
 
     public function scopeByIku($query, int $ikuId)
     {
-        // Filter kegiatan yang terkait dengan IKU tertentu
         return $query->whereHas('ikus', function ($q) use ($ikuId) {
-            $q->where('id', $ikuId);
+            $q->where('ikus.id', $ikuId);
         });
     }
 

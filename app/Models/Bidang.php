@@ -29,7 +29,21 @@ class Bidang extends Model
 
     public function ikus()
     {
-        // Bidang terlibat di banyak IKU (pivot iku_bidang)
-        return $this->belongsToMany(\App\Models\Iku::class, 'iku_bidang');
+        return $this->belongsToMany(
+            Iku::class,
+            'iku_bidang',
+            'bidang_id',
+            'iku_id'
+        );
+    }
+
+    public function scopeWithIku($query)
+    {
+        return $query->whereHas('ikus');
+    }
+
+    public function hasIku(int $ikuId): bool
+    {
+        return $this->ikus()->where('ikus.id', $ikuId)->exists();
     }
 }

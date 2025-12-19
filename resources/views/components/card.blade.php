@@ -1,14 +1,18 @@
-@props(['title' => '', 'subtitle' => '', 'href' => '#'])
+@props(['title' => '', 'subtitle' => '', 'href' => '#', 'downloadUrl' => ''])
 
-<a href="{{ $href }}">
+<a href="{{ $href }}" class="w-full">
     <div class="flex flex-row px-4 py-3 gap-3 w-full bg-bg-base-default rounded-lg">
         <div class="flex flex-col gap-1 w-full">
             <p class="text-base font-normal text-txt-base-default">{{ $title }}</p>
             <p class="text-sm font-normal text-txt-base-secondary">{{ $subtitle }}</p>
         </div>
 
-        <x-icon-button class="bg-acc-base-default">
-            <x-heroicon-m-arrow-down-tray class="w[20px] h-[20px]" />
-        </x-icon-button>
+        @if ($downloadUrl)
+            <a href="{{ $downloadUrl }}">
+                <x-icon-button class="bg-acc-base-default" title="Unduh PDF">
+                    <x-heroicon-m-arrow-down-tray class="w-[20px] h-auto" />
+                </x-icon-button>
+            </a>
+        @endif
     </div>
 </a>

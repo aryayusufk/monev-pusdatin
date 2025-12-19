@@ -42,4 +42,11 @@ class Iku extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function scopeForBidang($query, int $bidangId)
+    {
+        return $query->whereHas('bidangs', function ($q) use ($bidangId) {
+            $q->where('bidangs.id', $bidangId);
+        });
+    }
 }

@@ -40,8 +40,7 @@
                     $periodSelected = filled(request('period'));
                 @endphp
 
-                <x-select-input name="value" class="w-full" onchange="this.form.submit()"
-                    :disabled="!$periodSelected">
+                <x-select-input name="value" class="w-full" onchange="this.form.submit()" :disabled="!$periodSelected">
                     <option value="">
                         {{ $periodSelected ? 'Value' : 'Pilih Periode terlebih dahulu' }}
                     </option>
@@ -69,11 +68,10 @@
 
         <div class="flex flex-row justify-end">
             @php
-                $selectedYear = (int) request('year', $year);
-                $period = request('period');
-                $value = request('value');
+                $selectedYear = (int) request('year', now()->year);
+                $period = request('period'); // 'month' | 'quarter'
+                $value = request('value'); // 1..12 | 1..4
 
-                // Query yang ingin selalu ikut saat pindah halaman / download
                 $carry = array_filter(
                     [
                         'bidang_id' => request('bidang_id'),
@@ -81,39 +79,82 @@
                     ],
                     fn($v) => filled($v),
                 );
+
+                $buttonLabel = null;
+                $buttonHref = null;
+
+                if ($period === 'month' && filled($value)) {
+                    $buttonLabel = 'Unduh Laporan Bulanan';
+                    $buttonHref = route(
+                        'reports.bidang.export.monthly',
+                        array_merge($carry, [
+                            'year' => $selectedYear,
+                            'month' => (int) $value,
+                        ]),
+                    );
+                }
+
+                if ($period === 'quarter' && filled($value)) {
+                    $buttonLabel = 'Unduh Laporan Triwulan';
+                    $buttonHref = route(
+                        'reports.bidang.export.quarterly',
+                        array_merge($carry, [
+                            'year' => $selectedYear,
+                            'quarter' => (int) $value,
+                        ]),
+                    );
+                }
             @endphp
 
-            {{-- ✅ Tombol unduh diarahkan sesuai pilihan --}}
-            @if ($period === 'month' && filled($value))
-                <a
-                    href="{{ route('reports.bidang.monthly.report', [$selectedYear, (int) $value]) . (count($carry) ? '?' . http_build_query($carry) : '') }}">
+            {{-- ✅ TOMBOL HANYA MUNCUL JIKA FILTER LENGKAP --}}
+            @if ($buttonHref)
+                <a href="{{ $buttonHref }}">
                     <x-primary-button>
-                        Unduh Laporan Bulanan
+                        {{ $buttonLabel }}
                     </x-primary-button>
                 </a>
-            @else
-                <x-primary-button disabled title="Pilih Periode Bulanan dan Bulan terlebih dahulu">
-                    Unduh Laporan Bulanan
-                </x-primary-button>
             @endif
         </div>
+
 
         <div class="flex flex-col gap-3 w-full items-center">
             @forelse ($cards as $card)
                 @php
-                    $params = array_filter(
+                    $baseParams = array_filter(
                         [
                             'bidang_id' => request('bidang_id'),
                             'iku_id' => request('iku_id'),
-                            'start' => $card['start'],
-                            'end' => $card['end'],
-                            'title' => $card['title'],
                         ],
                         fn($v) => filled($v),
                     );
+
+                    $detailParams = array_merge($baseParams, [
+                        'start' => $card['start'],
+                        'end' => $card['end'],
+                        'title' => $card['title'],
+                    ]);
+
+                    $href = route('activities.index', $detailParams);
+
+                    $downloadUrl = null;
+
+                    if (request('period') === 'month') {
+                        $downloadUrl = route('reports.bidang.export.weekly', $detailParams);
+                    }
+
+                    if (request('period') === 'quarter') {
+                        $downloadUrl = route(
+                            'reports.bidang.export.monthly',
+                            array_merge($baseParams, [
+                                'year' => (int) request('year', now()->year),
+                                'month' => (int) ($card['month'] ?? 0),
+                                'title' => $card['title'],
+                            ]),
+                        );
+                    }
                 @endphp
 
-                <x-card :href="route('activities.index', $params)" :title="$card['title']" :subtitle="$card['subtitle']" />
+                <x-card :href="$href" :downloadUrl="$downloadUrl" :title="$card['title']" :subtitle="$card['subtitle']" />
             @empty
                 <div class="text-sm text-txt-base-default">
                     Pilih Tahun, Periode, dan Value untuk menampilkan daftar laporan.
