@@ -59,9 +59,15 @@ Route::middleware('auth')->group(function () {
     | Report PDF Export
     |--------------------------------------------------------------------------
     */
-    Route::get('/laporan-bidang/mingguan/{year}/{week}/export',
-    [ActivityController::class, 'weeklyExport']
-    )->name('reports.bidang.weekly.export');
+    Route::get('/reports/bidang/export/weekly', [ActivityController::class, 'weeklyExportRange'])
+        ->name('reports.bidang.export.weekly');
+
+    Route::get('/reports/bidang/export/monthly', [ActivityController::class, 'monthlyExportRange'])
+        ->name('reports.bidang.export.monthly');
+
+    Route::get('/reports/bidang/export/quarterly', [ActivityController::class, 'quarterlyExportRange'])
+        ->name('reports.bidang.export.quarterly');
+
 
     /*
     |--------------------------------------------------------------------------
