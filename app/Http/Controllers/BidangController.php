@@ -107,7 +107,9 @@ class BidangController extends Controller
         $roleMonev = Role::where('name', 'monev_bidang')->first();
         if ($roleMonev) {
 
-            $baseUsername = 'mnbid_' . strtolower(Str::slug($bidang->kode, '_'));
+            $slugNamaBidang = strtolower(Str::slug($bidang->nama, '_'));
+            $baseUsername   = 'monev_' . $slugNamaBidang;
+            
             $monevUsername = $baseUsername;
 
             $i = 1;
