@@ -175,8 +175,9 @@ class ActivityController extends Controller
 
         $ikusQuery = Iku::active()->orderBy('kode');
         if ($user->bidang_id) {
-            $ikusQuery->whereHas('bidangs', fn(Builder $q) => $q->where('bidang.id', $user->bidang_id));
+            $ikusQuery->whereHas('bidangs', fn(Builder $q) => $q->whereKey($user->bidang_id));
         }
+
 
         $ikus = $ikusQuery->get();
         $bidangs = Bidang::orderBy('nama')->get();
