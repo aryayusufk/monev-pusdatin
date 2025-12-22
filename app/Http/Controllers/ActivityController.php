@@ -404,9 +404,9 @@ class ActivityController extends Controller
         $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Mingguan';
 
         $pdf = Pdf::loadView('reports.bidang.weekly-pdf', [
-            'title' => $title,
+            'title'   => $title,
             'periode' => $periode,
-            'activities' => $activities,
+            'groups'  => $this->groupActivitiesByBidang($activities),
         ])->setPaper('a4', 'landscape');
 
         $safeTitle = preg_replace('/[^A-Za-z0-9\-_]/', '-', $title);
@@ -433,11 +433,17 @@ class ActivityController extends Controller
 
         $activities = $query->orderBy('occurred_at')->get();
 
+        $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
+        $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Bulanan';
+
         return Pdf::loadView('reports.bidang.monthly-pdf', [
-            'year' => $year,
+            'title'     => $title,
+            'periode'   => $periode,
+            'year'      => $year,
             'monthName' => $start->translatedFormat('F'),
-            'activities' => $activities,
-        ])->download("Laporan-Bulanan-{$year}-{$month}.pdf");
+            'groups'    => $this->groupActivitiesByBidang($activities),
+        ])->setPaper('a4', 'landscape')
+            ->download("Laporan-Bulanan-{$year}-{$month}.pdf");
     }
 
     public function quarterlyExportRange(Request $request)
@@ -459,11 +465,17 @@ class ActivityController extends Controller
 
         $activities = $query->orderBy('occurred_at')->get();
 
+        $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
+        $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Triwulan';
+
         return Pdf::loadView('reports.bidang.quarterly-pdf', [
-            'year' => $year,
+            'title'   => $title,
+            'periode' => $periode,
+            'year'    => $year,
             'quarter' => $quarter,
-            'activities' => $activities,
-        ])->download("Laporan-Triwulan-{$year}-Q{$quarter}.pdf");
+            'groups'  => $this->groupActivitiesByBidang($activities),
+        ])->setPaper('a4', 'landscape')
+            ->download("Laporan-Triwulan-{$year}-Q{$quarter}.pdf");
     }
 
     private function ikusQueryForRequest(Request $request): Builder
@@ -609,5 +621,12 @@ class ActivityController extends Controller
         }
 
         return $cards;
+    }
+
+    private function groupActivitiesByBidang($activities)
+    {
+        return $activities
+            ->groupBy(fn(Activity $a) => $a->bidang?->nama ?? 'TANPA BIDANG')
+            ->map(fn($items) => $items->values());
     }
 }
