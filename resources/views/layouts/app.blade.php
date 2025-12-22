@@ -20,7 +20,7 @@
     <div class="flex flex-row min-h-screen min-w-screen bg-bg-base-secondary">
         @include('layouts.navigation')
 
-        <div class="flex flex-col flex-1 justify-center">
+        <div class="flex flex-col flex-1 justify-center h-full">
             <main>
                 {{ $slot }}
             </main>
