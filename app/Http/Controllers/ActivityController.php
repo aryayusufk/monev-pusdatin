@@ -158,15 +158,6 @@ class ActivityController extends Controller
             ->with('success', 'Laporan kegiatan berhasil dibuat.');
     }
 
-    public function show(Activity $activity)
-    {
-        $this->authorize('view', $activity);
-
-        $activity->load(['bidang', 'ikus', 'files']);
-
-        return view('activities.show', compact('activity'));
-    }
-
     public function edit(Activity $activity, Request $request)
     {
         $this->authorize('update', $activity);
@@ -197,8 +188,6 @@ class ActivityController extends Controller
         if ($user->hasRole('user_bidang') || $user->hasRole('monev_bidang')) {
             unset($data['bidang_id']);
         }
-
-        $data['updated_by'] = $user->id;
 
         $activity->update($data);
 

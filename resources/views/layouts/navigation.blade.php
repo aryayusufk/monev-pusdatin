@@ -39,7 +39,7 @@
                     <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
                         {{ __('Buat Laporan') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('systemlog')" :active="request()->routeIs('systemlog')">
+                    <x-nav-link :href="route('logs.index')" :active="request()->routeIs('systemlog')">
                         {{ __('Catatan Aktivitas') }}
                     </x-nav-link>
 
