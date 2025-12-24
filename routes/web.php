@@ -1,76 +1,46 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ActivityController;
-use App\Http\Controllers\IkuController;
 use App\Http\Controllers\ActivityFileController;
 use App\Http\Controllers\ActivityNoteController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\BidangController;
+use App\Http\Controllers\IkuController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemLogController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// Redirect root ke halaman login
+Route::redirect('/', '/login');
 
-// Semua route yang butuh login
 Route::middleware('auth')->group(function () {
 
-    // Profile (bawaan Breeze)
+    // Profile (Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Activities (Laporan Kegiatan)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
-    Route::get('/activities/create', [ActivityController::class, 'create'])->name('activities.create');
-    Route::post('/activities', [ActivityController::class, 'store'])->name('activities.store');
-    Route::get('/activities/{activity}/edit', [ActivityController::class, 'edit'])->name('activities.edit');
-    Route::put('/activities/{activity}', [ActivityController::class, 'update'])->name('activities.update');
-    Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->name('activities.destroy');
+    // Laporan Kegiatan (Activities)
+    Route::resource('activities', ActivityController::class)->except(['show']);
 
-    // Seleksi triwulan
     Route::post('/activities/{activity}/select-quarterly', [ActivityController::class, 'selectQuarterly'])
         ->name('activities.select-quarterly');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Laporan Mingguan per Bidang
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/laporan-bidang/mingguan', [ActivityController::class, 'weeklyIndex'])
-        ->name('reports.bidang.index');
+    // Laporan Bidang (mingguan/bulanan)
+    Route::prefix('laporan-bidang')->name('reports.bidang.')->group(function () {
+        Route::get('/mingguan', [ActivityController::class, 'weeklyIndex'])->name('index');
+        Route::get('/mingguan/{year}/{week}', [ActivityController::class, 'weeklyReport'])->name('weekly.report');
+        Route::get('/bulanan/{year}/{month}', [ActivityController::class, 'monthlyReport'])->name('monthly.report');
+    });
 
-    Route::get('/laporan-bidang/mingguan/{year}/{week}', [ActivityController::class, 'weeklyReport'])
-        ->name('reports.bidang.weekly.report');
+    // Export PDF laporan bidang
+    Route::prefix('reports/bidang/export')->name('reports.bidang.export.')->group(function () {
+        Route::get('/weekly', [ActivityController::class, 'weeklyExportRange'])->name('weekly');
+        Route::get('/monthly', [ActivityController::class, 'monthlyExportRange'])->name('monthly');
+        Route::get('/quarterly', [ActivityController::class, 'quarterlyExportRange'])->name('quarterly');
+    });
 
-    Route::get('/laporan-bidang/bulanan/{year}/{month}', [ActivityController::class, 'monthlyReport'])
-        ->name('reports.bidang.monthly.report');
-    /*
-    |--------------------------------------------------------------------------
-    | Report PDF Export
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/reports/bidang/export/weekly', [ActivityController::class, 'weeklyExportRange'])
-        ->name('reports.bidang.export.weekly');
-
-    Route::get('/reports/bidang/export/monthly', [ActivityController::class, 'monthlyExportRange'])
-        ->name('reports.bidang.export.monthly');
-
-    Route::get('/reports/bidang/export/quarterly', [ActivityController::class, 'quarterlyExportRange'])
-        ->name('reports.bidang.export.quarterly');
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Activity Files (Data Pendukung / Lampiran PDF)
-    |--------------------------------------------------------------------------
-    */
+    // Lampiran file kegiatan
     Route::post('/activities/{activity}/files', [ActivityFileController::class, 'store'])
         ->name('activities.files.store');
 
@@ -80,58 +50,27 @@ Route::middleware('auth')->group(function () {
     Route::delete('/files/{file}', [ActivityFileController::class, 'destroy'])
         ->name('files.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Activity Notes (Catatan Monev)
-    |--------------------------------------------------------------------------
-    */
+    // Catatan monev
     Route::post('/activities/{activity}/notes', [ActivityNoteController::class, 'store'])
         ->name('activities.notes.store');
 
     Route::delete('/notes/{note}', [ActivityNoteController::class, 'destroy'])
         ->name('notes.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | IKU Management
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/ikus', [IkuController::class, 'index'])->name('ikus.index');
-    Route::get('/ikus/create', [IkuController::class, 'create'])->name('ikus.create');
-    Route::post('/ikus', [IkuController::class, 'store'])->name('ikus.store');
-    Route::get('/ikus/{iku}/edit', [IkuController::class, 'edit'])->name('ikus.edit');
-    Route::put('/ikus/{iku}', [IkuController::class, 'update'])->name('ikus.update');
-    Route::delete('/ikus/{iku}', [IkuController::class, 'destroy'])->name('ikus.destroy');
-    Route::patch('/ikus/{iku}/toggle-active', [IkuController::class, 'toggleActive'])->name('ikus.toggle-active');
+    // IKU
+    Route::resource('ikus', IkuController::class);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Bidang Management + Pembuatan User Bidang & Monev Bidang
-    |--------------------------------------------------------------------------
-    | Hanya super_admin yang bisa akses, dicek di BidangController::ensureCanManageBidangs()
-    */
-    Route::get('/bidangs', [BidangController::class, 'index'])->name('bidangs.index');
-    Route::get('/bidangs/create', [BidangController::class, 'create'])->name('bidangs.create');
-    Route::post('/bidangs', [BidangController::class, 'store'])->name('bidangs.store');
-    Route::get('/bidangs/{bidang}/edit', [BidangController::class, 'edit'])->name('bidangs.edit');
-    Route::put('/bidangs/{bidang}', [BidangController::class, 'update'])->name('bidangs.update');
-    Route::delete('/bidangs/{bidang}', [BidangController::class, 'destroy'])->name('bidangs.destroy');
+    Route::patch('/ikus/{iku}/toggle-active', [IkuController::class, 'toggleActive'])
+        ->name('ikus.toggle-active');
 
-    /*
-    |--------------------------------------------------------------------------
-    | User Management (Super Admin)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-    Route::post('/users', [UserController::class, 'store'])->name('users.store');
-    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    // Bidang (khusus super_admin, dicek di controller)
+    Route::resource('bidangs', BidangController::class);
 
-    /* LOGS */
-    Route::get('/logs', [SystemLogController::class, 'index'])
-        ->name('logs.index');
+    // User (super_admin)
+    Route::resource('users', UserController::class);
+
+    // Logs
+    Route::get('/logs', [SystemLogController::class, 'index'])->name('logs.index');
 });
 
 require __DIR__ . '/auth.php';
