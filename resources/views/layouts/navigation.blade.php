@@ -14,7 +14,7 @@
                 <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false, openLaporanBidang: false, openLaporanMonev: false }">
 
                     <button type="button" @click="openLaporanBidang = !openLaporanBidang"
-                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                        class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
                         <span>Laporan Bidang</span>
                         <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
                             x-bind:class="openLaporanBidang ? 'rotate-180' : ''" />
@@ -34,7 +34,7 @@
                     </div>
 
                     <button type="button" @click="openLaporanMonev = !openLaporanMonev"
-                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out whitespace-nowrap">
+                        class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out whitespace-nowrap">
                         <span>Laporan Monitoring & Evaluasi</span>
                         <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
                             x-bind:class="openLaporanMonev ? 'rotate-180' : ''" />
