@@ -20,6 +20,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Bulk actions untuk menambahkan/menghapus kegiatan ke/dari laporan monev
+    Route::post('/activities/bulk-add-monev', [ActivityController::class, 'bulkAddToMonev'])
+        ->name('activities.bulk-add-monev');
+
+    Route::post('/activities/bulk-remove-monev', [ActivityController::class, 'bulkRemoveFromMonev'])
+        ->name('activities.bulk-remove-monev');
+
     // Laporan Kegiatan (Activities)
     Route::resource('activities', ActivityController::class)->except(['show']);
 
@@ -32,6 +39,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/mingguan/{year}/{week}', [ActivityController::class, 'weeklyReport'])->name('weekly.report');
         Route::get('/bulanan/{year}/{month}', [ActivityController::class, 'monthlyReport'])->name('monthly.report');
     });
+
+    // Laporan Monitoring & Evaluasi
+    Route::get('/laporan-monitoring-evaluasi', [ActivityController::class, 'monevDashboard'])
+        ->name('reports.monev.index');
+
+    Route::get('/laporan-monitoring-evaluasi/activities', [ActivityController::class, 'monevIndex'])
+        ->name('reports.monev.activities');
+
+    Route::get('/laporan-monitoring-evaluasi/export/weekly', [ActivityController::class, 'monevWeeklyExportRange'])
+        ->name('reports.monev.export.weekly');
+
+    Route::get('/laporan-monitoring-evaluasi/export/monthly', [ActivityController::class, 'monevMonthlyExportRange'])
+        ->name('reports.monev.export.monthly');
+
+    Route::get('/laporan-monitoring-evaluasi/export/quarterly', [ActivityController::class, 'monevQuarterlyExportRange'])
+        ->name('reports.monev.export.quarterly');
 
     // Export PDF laporan bidang
     Route::prefix('reports/bidang/export')->name('reports.bidang.export.')->group(function () {

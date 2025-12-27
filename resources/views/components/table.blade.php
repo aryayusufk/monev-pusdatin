@@ -10,21 +10,14 @@
     'deleteRoute' => null,
 ])
 
-<div class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm h-full min-h-0">
+@php
+    $tableId = $attributes->get('id') ?? 'tbl_' . substr(md5(uniqid('', true)), 0, 8);
+@endphp
 
-    @if ($heading || $subheading)
-        <div class="flex flex-col px-4 pt-2 pb-1">
-            @if ($subheading)
-                <p class="text-sm font-normal text-txt-base-secondary">{{ $subheading }}</p>
-            @endif
-            @if ($heading)
-                <h1 class="text-base font-semibold text-acc-base-default">{{ $heading }}</h1>
-            @endif
-        </div>
-    @endif
+<div id="{{ $tableId }}"
+    class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm h-full min-h-0">
 
     <div class="flex flex-col flex-1 gap-2 min-h-0">
-        <!-- Table Header -->
         <table class="table-fixed w-full">
             <thead>
                 <tr class="flex flex-row flex-1 items-center p-4 gap-4 border-b border-bor-base-default">
@@ -36,7 +29,7 @@
 
                     @if ($showCheckbox)
                         <th class="shrink-0 w-6 flex items-center justify-center">
-                            <input type="checkbox"
+                            <input type="checkbox" data-role="select-all" aria-label="Pilih semua"
                                 class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
                         </th>
                     @endif
@@ -48,22 +41,15 @@
             </thead>
         </table>
 
-        <!-- Table Body -->
         <div class="flex-1 min-h-0 overflow-y-auto">
             <table class="table-fixed w-full">
                 <tbody>
                     @forelse($rows as $rowIndex => $row)
                         <tr
                             class="flex flex-row flex-1 gap-4 px-4 py-4 border-b border-bor-base-default last:border-b-0">
-                            {{-- Sel data --}}
                             @foreach ($row as $key => $cell)
-                                @continue($key === 'id') {{-- id hanya dipakai untuk value checkbox / action --}}
+                                @continue($key === 'id')
                                 <td class="w-full text-justify text-sm leading-relaxed text-txt-base-primary">
-                                    {{-- 
-                                        Pakai {!! !!} supaya bisa kirim HTML dari controller
-                                        (misal untuk link "Nama File").
-                                        Kalau mau aman full text, ganti ke {{ $cell }}
-                                    --}}
                                     {!! $cell !!}
                                 </td>
                             @endforeach
@@ -71,14 +57,13 @@
                             @if ($showCheckbox)
                                 <td class="shrink-0 w-6 flex items-start justify-center pt-1">
                                     <input type="checkbox" name="{{ $checkboxName }}[]"
-                                        value="{{ $row['id'] ?? $rowIndex }}"
+                                        value="{{ $row['id'] ?? $rowIndex }}" data-role="row-checkbox"
                                         class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
                                 </td>
                             @endif
 
                             @if ($showActions)
                                 <td class="flex flex-col items-center justify-end gap-2">
-
                                     @if ($editRoute)
                                         <a href="{{ route($editRoute, $row['id']) }}"
                                             class="text-xs font-medium text-acc-base-default hover:underline">
@@ -91,14 +76,12 @@
                                             onsubmit="return confirm('Yakin ingin menghapus data ini?');">
                                             @csrf
                                             @method('DELETE')
-
                                             <button type="submit"
                                                 class="text-xs font-medium text-red-600 hover:underline">
                                                 Hapus
                                             </button>
                                         </form>
                                     @endif
-
                                 </td>
                             @endif
                         </tr>
@@ -115,3 +98,75 @@
         </div>
     </div>
 </div>
+
+@if ($showCheckbox)
+    <script>
+        (function() {
+            const root = document.getElementById(@json($tableId));
+            if (!root) return;
+
+            const selectAll = root.querySelector('input[data-role="select-all"]');
+
+            function rowCheckboxes() {
+                return Array.from(root.querySelectorAll('input[data-role="row-checkbox"]'));
+            }
+
+            function dispatchSelectionChanged() {
+                const boxes = rowCheckboxes();
+                const values = boxes.filter(cb => cb.checked).map(cb => cb.value);
+
+                window.dispatchEvent(new CustomEvent('table-selection-changed', {
+                    detail: {
+                        tableId: root.id,
+                        selected: values.length,
+                        total: boxes.length,
+                        values,
+                    }
+                }));
+            }
+
+            function syncHeaderState() {
+                if (!selectAll) return;
+
+                const boxes = rowCheckboxes();
+                const total = boxes.length;
+                const selected = boxes.filter(cb => cb.checked).length;
+
+                if (total === 0) {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                    return;
+                }
+
+                if (selected === 0) {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                } else if (selected === total) {
+                    selectAll.checked = true;
+                    selectAll.indeterminate = false;
+                } else {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = true;
+                }
+            }
+
+            selectAll?.addEventListener('change', function() {
+                const checked = !!this.checked;
+                rowCheckboxes().forEach(cb => cb.checked = checked);
+                syncHeaderState();
+                dispatchSelectionChanged();
+            });
+
+            root.addEventListener('change', function(e) {
+                const t = e.target;
+                if (t && t.matches('input[data-role="row-checkbox"]')) {
+                    syncHeaderState();
+                    dispatchSelectionChanged();
+                }
+            });
+
+            syncHeaderState();
+            dispatchSelectionChanged();
+        })();
+    </script>
+@endif

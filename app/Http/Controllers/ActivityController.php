@@ -103,10 +103,137 @@ class ActivityController extends Controller
             'activities' => $activities,
             'columns' => $columns,
             'rows' => $rows,
-            'filters' => $request->only(['search', 'year', 'month', 'quarter', 'iso_week', 'iku_id', 'selected_quarterly', 'bidang_id']),
+            'filters' => $request->only([
+                'start',
+                'end',
+                'search',
+                'year',
+                'month',
+                'quarter',
+                'iso_week',
+                'iku_id',
+                'selected_quarterly',
+                'bidang_id',
+                'title',
+            ]),
             'ikus' => $ikus,
             'bidangs' => $bidangs,
             'pageTitle' => $pageTitle,
+            'monevMode' => false,
+        ]);
+    }
+
+    /**
+     * Halaman Laporan Monitoring & Evaluasi
+     * Tampilannya sama seperti index(), beda hanya data:
+     * - hanya Activity yang sudah diseleksi untuk laporan triwulan (is_selected_quarterly = true)
+     */
+    public function monevIndex(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $user = $request->user();
+
+        $q = Activity::with(['bidang', 'ikus', 'files'])
+            ->selectedQuarterly(true) // <-- pembeda utama dari index()
+            ->when($request->filled('scope'), function (Builder $x) use ($request) {
+                $x->where('selected_quarterly_scope', $request->scope);
+            })
+            ->when($request->filled('scope'), function (Builder $q) use ($request) {
+                $q->where('selected_quarterly_scope', $request->scope);
+            })
+            ->when($request->filled('start') && $request->filled('end'), function (Builder $x) use ($request) {
+                $x->whereBetween('occurred_at', [
+                    Carbon::parse($request->start)->startOfDay(),
+                    Carbon::parse($request->end)->endOfDay(),
+                ]);
+            })
+            ->when($request->filled('search'), function (Builder $query) use ($request) {
+                $s = $request->search;
+                $query->where(function (Builder $w) use ($s) {
+                    $w->where('kegiatan', 'ilike', "%{$s}%")
+                        ->orWhere('tindak_lanjut', 'ilike', "%{$s}%")
+                        ->orWhere('kendala', 'ilike', "%{$s}%")
+                        ->orWhere('percepatan', 'ilike', "%{$s}%");
+                });
+            })
+            ->when($request->year, fn(Builder $x, $y) => $x->ofYear((int) $y))
+            ->when($request->month, fn(Builder $x, $m) => $x->ofMonth((int) $m))
+            ->when($request->quarter, fn(Builder $x, $qtr) => $x->ofQuarter((int) $qtr))
+            ->when($request->iso_week, fn(Builder $x, $w) => $x->ofWeek((int) $w))
+            ->when($request->iku_id, fn(Builder $x, $i) => $x->byIku((int) $i));
+
+        // Filter bidang berdasarkan role / dropdown (sama seperti laporan bidang)
+        $this->applyBidangFilter($q, $request);
+
+        $activities = $q->orderBy('occurred_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        $columns = [
+            'Kegiatan',
+            'Tindak Lanjut',
+            'Kendala',
+            'Percepatan',
+            'Data Pendukung & Nota Dinas',
+        ];
+
+        $rows = $activities->getCollection()->map(function (Activity $act) {
+            $file = $act->files?->first();
+
+            $dataPendukung = '-';
+            if ($file) {
+                $url = route('files.download', $file->id);
+                $dataPendukung =
+                    '<a href="' . $url . '" class="text-acc-base-default hover:underline">' .
+                    e($file->original_name) .
+                    '</a>';
+            }
+
+            return [
+                'id' => $act->id,
+                'kegiatan' => e($act->kegiatan),
+                'tindak_lanjut' => e($act->tindak_lanjut ?? '-'),
+                'kendala' => e($act->kendala ?? '-'),
+                'percepatan' => e($act->percepatan ?? '-'),
+                'data_pendukung' => $dataPendukung,
+            ];
+        })->values()->toArray();
+
+        $ikus = $this->ikusQueryForRequest($request)->get();
+        $bidangs = Bidang::orderBy('nama')->get();
+
+        $bidangName = null;
+        if ($request->filled('bidang_id')) {
+            $bidangName = Bidang::find((int) $request->bidang_id)?->nama;
+        } elseif ($user?->bidang_id) {
+            $bidangName = Bidang::find((int) $user->bidang_id)?->nama;
+        }
+
+        $pageTitle = $request->filled('title')
+            ? trim($request->title . ($bidangName ? " {$bidangName}" : ''))
+            : 'Laporan Monitoring & Evaluasi';
+
+        return view('activities.index', [
+            'activities' => $activities,
+            'columns' => $columns,
+            'rows' => $rows,
+            'filters' => $request->only([
+                'start',
+                'end',
+                'search',
+                'year',
+                'month',
+                'quarter',
+                'iso_week',
+                'iku_id',
+                'bidang_id',
+                'title',
+            ]),
+            'ikus' => $ikus,
+            'bidangs' => $bidangs,
+            'pageTitle' => $pageTitle,
+            'monevMode' => true,
         ]);
     }
 
@@ -169,7 +296,6 @@ class ActivityController extends Controller
             $ikusQuery->whereHas('bidangs', fn(Builder $q) => $q->whereKey($user->bidang_id));
         }
 
-
         $ikus = $ikusQuery->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
@@ -226,6 +352,69 @@ class ActivityController extends Controller
         return redirect()
             ->route('activities.index')
             ->with('success', 'Laporan kegiatan berhasil dihapus.');
+    }
+
+    /**
+     * Bulk pilih activity untuk Monev (triwulan) dari checkbox di tabel.
+     * Dipakai di halaman Laporan Bidang.
+     */
+    public function bulkAddToMonev(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $ids = $request->input('selected', []);
+        if (!is_array($ids) || count($ids) === 0) {
+            return back()->with('error', 'Pilih minimal 1 laporan kegiatan.');
+        }
+
+        // default aman: bidang
+        $scope = 'bidang';
+
+        // hanya role tertentu boleh memilih global
+        if ($this->canUseGlobalScope($request)) {
+            $scope = $request->input('selected_quarterly_scope', 'bidang');
+        }
+
+        // validasi sesuai CHECK constraint DB
+        if (!in_array($scope, ['bidang', 'global'], true)) {
+            return back()->with('error', 'Scope tidak valid. Pilih: bidang / global.');
+        }
+
+        Activity::query()
+            ->whereIn('id', $ids)
+            ->update([
+                'is_selected_quarterly' => true,
+                'selected_quarterly_scope' => $scope,
+                'selected_quarterly_by' => $request->user()->id,
+                'selected_quarterly_at' => now(),
+            ]);
+
+        return back()->with('success', 'Laporan kegiatan berhasil ditambahkan ke Laporan Monitoring & Evaluasi.');
+    }
+
+    /**
+     * Bulk keluarkan activity dari Monev (triwulan) dari checkbox di tabel.
+     * Dipakai di halaman Laporan Monitoring & Evaluasi.
+     */
+    public function bulkRemoveFromMonev(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $ids = $request->input('selected', []);
+        if (!is_array($ids) || count($ids) === 0) {
+            return back()->with('error', 'Pilih minimal 1 laporan kegiatan.');
+        }
+
+        Activity::query()
+            ->whereIn('id', $ids)
+            ->update([
+                'is_selected_quarterly' => false,
+                'selected_quarterly_scope' => null,
+                'selected_quarterly_by' => null,
+                'selected_quarterly_at' => null,
+            ]);
+
+        return back()->with('success', 'Laporan kegiatan berhasil dikeluarkan dari Laporan Monitoring & Evaluasi.');
     }
 
     public function selectQuarterly(SelectQuarterlyRequest $request, Activity $activity)
@@ -300,6 +489,69 @@ class ActivityController extends Controller
             'cards' => $cards,
             'ikus' => $ikus,
             'bidangs' => $bidangs,
+        ]);
+    }
+
+    public function monevDashboard(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        // Tahun dropdown: sama seperti weeklyIndex
+        $yearsInData = Activity::query()
+            ->select('year')
+            ->whereNotNull('year')
+            ->distinct()
+            ->orderBy('year', 'asc')
+            ->pluck('year');
+
+        if ($yearsInData->isEmpty()) {
+            $years = collect([now()->year, now()->year + 1]);
+        } else {
+            $maxYear = (int) $yearsInData->max();
+            $years = $yearsInData->values();
+            $years->push($maxYear + 1);
+        }
+
+        $year = (int) $request->input('year', $years->last());
+        $period = $request->input('period'); // 'month' atau 'quarter'
+        $value = $request->input('value');   // month: 1-12, quarter: 1-4
+
+        $ikus = $this->ikusQueryForRequest($request)->get();
+        $bidangs = Bidang::orderBy('nama')->get();
+
+        // cards sama seperti laporan bidang (mingguan per bulan / bulanan per quarter)
+        $cards = [];
+        if (!empty($period) && !empty($value)) {
+            if ($period === 'month') {
+                $cards = $this->buildWeekCardsForMonth($year, (int) $value);
+            } elseif ($period === 'quarter') {
+                $cards = $this->buildMonthCardsForQuarter($year, (int) $value);
+            }
+        }
+
+        $scope = 'bidang';
+        if ($this->canUseGlobalScope($request)) {
+            $scope = $request->input('scope', 'bidang');
+        }
+        if (!in_array($scope, ['bidang', 'global'], true)) {
+            $scope = 'bidang';
+        }
+
+        // kirim ke view baru: reports.monev.index
+        return view('reports.monev.index', [
+            'year' => $year,
+            'years' => $years,
+            'period' => $period,
+            'value' => $value,
+            'cards' => $cards,
+            'ikus' => $ikus,
+            'bidangs' => $bidangs,
+            'scope' => $scope,
+            'canGlobal' => $this->canUseGlobalScope($request),
+
+            // optional: jika view kamu butuh
+            'filters' => $request->only(['year', 'period', 'value', 'iku_id', 'bidang_id', 'title']),
+            'pageTitle' => 'Laporan Monitoring & Evaluasi',
         ]);
     }
 
@@ -468,6 +720,132 @@ class ActivityController extends Controller
             ->download("Laporan-Triwulan-{$year}-Q{$quarter}.pdf");
     }
 
+    public function monevWeeklyExportRange(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        if (!$request->filled('start') || !$request->filled('end')) {
+            abort(422, 'Parameter start dan end wajib diisi.');
+        }
+
+        $start = Carbon::parse($request->start)->startOfDay();
+        $end = Carbon::parse($request->end)->endOfDay();
+
+        $scope = 'bidang';
+        if ($this->canUseGlobalScope($request)) {
+            $scope = $request->input('scope', 'bidang');
+        }
+        if (!in_array($scope, ['bidang', 'global'], true)) {
+            $scope = 'bidang';
+        }
+
+        $query = Activity::with(['bidang', 'files', 'ikus'])
+            ->selectedQuarterly(true)
+            ->where('selected_quarterly_scope', $scope)
+            ->whereBetween('occurred_at', [$start, $end]);
+
+        $this->applyBidangFilter($query, $request);
+        $this->applyIkuFilter($query, $request);
+
+        $activities = $query->orderBy('occurred_at')->get();
+
+        $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
+        $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Monitoring & Evaluasi (Mingguan)';
+
+        $pdf = Pdf::loadView('reports.bidang.weekly-pdf', [
+            'title'   => $title,
+            'periode' => $periode,
+            'groups'  => $this->groupActivitiesByBidang($activities),
+        ])->setPaper('a4', 'landscape');
+
+        $safeTitle = preg_replace('/[^A-Za-z0-9\-_]/', '-', $title);
+        return $pdf->download("{$safeTitle}-{$start->toDateString()}-{$end->toDateString()}.pdf");
+    }
+
+    public function monevMonthlyExportRange(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $month = (int) $request->month;
+        $year  = (int) $request->year;
+
+        $start = Carbon::create($year, $month, 1)->startOfDay();
+        $end   = $start->copy()->endOfMonth()->endOfDay();
+
+        $scope = 'bidang';
+        if ($this->canUseGlobalScope($request)) {
+            $scope = $request->input('scope', 'bidang');
+        }
+        if (!in_array($scope, ['bidang', 'global'], true)) {
+            $scope = 'bidang';
+        }
+
+        $query = Activity::with(['bidang', 'files', 'ikus'])
+            ->selectedQuarterly(true)
+            ->where('selected_quarterly_scope', $scope)
+            ->whereBetween('occurred_at', [$start, $end]);
+
+        $this->applyBidangFilter($query, $request);
+        $this->applyIkuFilter($query, $request);
+
+        $activities = $query->orderBy('occurred_at')->get();
+
+        $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
+        $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Monitoring & Evaluasi (Bulanan)';
+
+        return Pdf::loadView('reports.bidang.monthly-pdf', [
+            'title'     => $title,
+            'periode'   => $periode,
+            'year'      => $year,
+            'monthName' => $start->translatedFormat('F'),
+            'groups'    => $this->groupActivitiesByBidang($activities),
+        ])->setPaper('a4', 'landscape')
+            ->download("Laporan-Monev-Bulanan-{$year}-{$month}.pdf");
+    }
+
+    public function monevQuarterlyExportRange(Request $request)
+    {
+        Gate::authorize('viewAny', Activity::class);
+
+        $quarter = (int) $request->quarter;
+        $year = (int) $request->year;
+
+        $startMonth = (($quarter - 1) * 3) + 1;
+        $start = Carbon::create($year, $startMonth, 1)->startOfDay();
+        $end = $start->copy()->addMonths(2)->endOfMonth()->endOfDay();
+
+        $scope = 'bidang';
+        if ($this->canUseGlobalScope($request)) {
+            $scope = $request->input('scope', 'bidang');
+        }
+        if (!in_array($scope, ['bidang', 'global'], true)) {
+            $scope = 'bidang';
+        }
+
+        $query = Activity::with(['bidang', 'files', 'ikus'])
+            ->selectedQuarterly(true)
+            ->where('selected_quarterly_scope', $scope)
+            ->whereBetween('occurred_at', [$start, $end]);
+
+        $this->applyBidangFilter($query, $request);
+        $this->applyIkuFilter($query, $request);
+
+        $activities = $query->orderBy('occurred_at')->get();
+
+        $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
+        $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Monitoring & Evaluasi (Triwulan)';
+
+        return Pdf::loadView('reports.bidang.quarterly-pdf', [
+            'title'   => $title,
+            'periode' => $periode,
+            'year'    => $year,
+            'quarter' => $quarter,
+            'groups'  => $this->groupActivitiesByBidang($activities),
+        ])->setPaper('a4', 'landscape')
+            ->download("Laporan-Monev-Triwulan-{$year}-Q{$quarter}.pdf");
+    }
+
+
     private function ikusQueryForRequest(Request $request): Builder
     {
         $q = Iku::query()->orderBy('kode');
@@ -477,13 +855,12 @@ class ActivityController extends Controller
 
         $bidangId = $this->resolveBidangId($request);
         if ($bidangId) {
-            // gunakan scope di model IKU (lebih konsisten dan menghindari kolom ambigu)
+            // gunakan scope di model IKU
             $q->forBidang($bidangId);
         }
 
         return $q;
     }
-
 
     /* =========================
      * Helpers
@@ -531,7 +908,7 @@ class ActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang')) {
+        if ($user && ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang'))) {
             return (int) $user->bidang_id;
         }
 
@@ -618,5 +995,14 @@ class ActivityController extends Controller
         return $activities
             ->groupBy(fn(Activity $a) => $a->bidang?->nama ?? 'TANPA BIDANG')
             ->map(fn($items) => $items->values());
+    }
+
+    private function canUseGlobalScope(Request $request): bool
+    {
+        $user = $request->user();
+        if (!$user) return false;
+
+        // sesuaikan role yang kamu pakai untuk tim monev pusat
+        return $user->hasRole('super_admin') || $user->hasRole('monev_pusat');
     }
 }

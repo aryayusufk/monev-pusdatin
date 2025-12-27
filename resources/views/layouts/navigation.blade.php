@@ -1,4 +1,4 @@
-<nav class="bg-bg-base-default border-r border-bor-base-default w-[180px]">
+<nav class="bg-bg-base-default border-r border-bor-base-default">
     <!-- Primary Navigation Menu -->
     <div class="flex flex-col w-full h-full">
         <div class="flex flex-col h-full justify-between">
@@ -11,7 +11,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false, openLaporanBidang: false }">
+                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false, openLaporanBidang: false, openLaporanMonev: false }">
 
                     <button type="button" @click="openLaporanBidang = !openLaporanBidang"
                         class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
@@ -33,9 +33,26 @@
                         @endforelse
                     </div>
 
-                    <x-nav-link href="#" :active="false">
-                        Laporan Monitoring & Evaluasi
-                    </x-nav-link>
+                    <button type="button" @click="openLaporanMonev = !openLaporanMonev"
+                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out whitespace-nowrap">
+                        <span>Laporan Monitoring & Evaluasi</span>
+                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
+                            x-bind:class="openLaporanMonev ? 'rotate-180' : ''" />
+                    </button>
+
+                    <div x-show="openLaporanMonev" x-collapse class="flex flex-col gap-2 p-2">
+                        @forelse ($navBidangs as $bidang)
+                            <x-nav-link :href="route('reports.monev.index', ['bidang_id' => $bidang->id])" :active="request()->routeIs('reports.monev.index') &&
+                                (int) request('bidang_id') === $bidang->id">
+                                {{ $bidang->nama }}
+                            </x-nav-link>
+                        @empty
+                            <div class="text-sm text-txt-base-default">
+                                Belum ada bidang
+                            </div>
+                        @endforelse
+                    </div>
+
                     <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
                         {{ __('Buat Laporan') }}
                     </x-nav-link>
