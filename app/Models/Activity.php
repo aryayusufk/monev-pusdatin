@@ -59,12 +59,6 @@ class Activity extends Model
         return $this->hasMany(ActivityFile::class);
     }
 
-    public function notes()
-    {
-        // Catatan monev, dll.
-        return $this->hasMany(\App\Models\ActivityNote::class);
-    }
-
     public function audits()
     {
         // Log aktivitas (create, update, seleksi triwulan, dsb.)
