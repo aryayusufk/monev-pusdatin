@@ -5,6 +5,8 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -12,8 +14,13 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
+    Route::get('login', function (Request $request) {
+        if (Auth::check()) {
+            return redirect()->to($request->user()->defaultBidangReportUrl());
+        }
+
+        return app(AuthenticatedSessionController::class)->create();
+    })->middleware('guest')->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 });

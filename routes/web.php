@@ -9,11 +9,45 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Models\Bidang;
 
 // Redirect root ke halaman login
 Route::redirect('/', '/login');
 
 Route::middleware('auth')->group(function () {
+
+    // Redirect setelah login: selalu ke Laporan Bidang sesuai bidang user / bidang pertama di dropdown
+    Route::get('/home', function (Request $request) {
+        $user = $request->user();
+
+        // Kalau user tidak punya akses laporan bidang, fallback aman
+        if (!$user || !$user->can('reports.bidang.view')) {
+            return redirect()->route('activities.index');
+        }
+
+        // Role berbasis bidang: pakai bidang milik akun
+        if ($user->hasRole(['monev_bidang', 'user_bidang'])) {
+            $bidangId = (int) $user->bidang_id;
+
+            return redirect()->route('reports.bidang.index', [
+                'bidang_id' => $bidangId,
+            ]);
+        }
+
+        // Role lintas bidang: arahkan ke bidang paling atas (mengikuti urutan dropdown)
+        // Dropdown kamu dan controller juga pakai orderBy('nama'), jadi kita samakan.
+        $firstBidangId = Bidang::orderBy('nama')->value('id');
+
+        // Kalau belum ada data bidang, fallback
+        if (!$firstBidangId) {
+            return redirect()->route('activities.index');
+        }
+
+        return redirect()->route('reports.bidang.index', [
+            'bidang_id' => (int) $firstBidangId,
+        ]);
+    })->name('home');
 
     // Profile (Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

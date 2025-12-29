@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Bidang;
 
 class User extends Authenticatable
 {
@@ -52,5 +53,33 @@ class User extends Authenticatable
         }
 
         return $this->roles()->whereIn('name', $names)->exists();
+    }
+
+    public function defaultBidangReportUrl(): string
+    {
+        // Jika user tidak punya akses menu Laporan Bidang, fallback aman
+        if (!$this->can('reports.bidang.view')) {
+            return route('activities.index');
+        }
+
+        // Role berbasis 1 bidang
+        if ($this->hasRole(['user_bidang', 'monev_bidang'])) {
+            $bidangId = (int) $this->bidang_id;
+
+            return route('reports.bidang.index', [
+                'bidang_id' => $bidangId,
+            ]);
+        }
+
+        // Role lintas bidang: pilih bidang "paling atas" (samakan dengan dropdown kamu: orderBy('nama'))
+        $firstBidangId = Bidang::query()->orderBy('nama')->value('id');
+
+        if (!$firstBidangId) {
+            return route('activities.index');
+        }
+
+        return route('reports.bidang.index', [
+            'bidang_id' => (int) $firstBidangId,
+        ]);
     }
 }

@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('profile.edit', absolute: false));
+        return redirect()->to($request->user()->defaultBidangReportUrl());
     }
 
     /**
