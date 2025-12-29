@@ -1,25 +1,55 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ActivityController;
-use App\Http\Controllers\IkuController;
 use App\Http\Controllers\ActivityFileController;
 use App\Http\Controllers\ActivityNoteController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\BidangController;
+use App\Http\Controllers\IkuController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemLogController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Models\Bidang;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// Redirect root ke halaman login
+Route::redirect('/', '/login');
 
-// Semua route yang butuh login
 Route::middleware('auth')->group(function () {
 
-    Route::get('/systemlog', [SystemLogController::class, 'index'])->name('systemlog');
+    // Redirect setelah login: selalu ke Laporan Bidang sesuai bidang user / bidang pertama di dropdown
+    Route::get('/home', function (Request $request) {
+        $user = $request->user();
 
-    // Profile (bawaan Breeze)
+        // Kalau user tidak punya akses laporan bidang, fallback aman
+        if (!$user || !$user->can('reports.bidang.view')) {
+            return redirect()->route('activities.index');
+        }
+
+        // Role berbasis bidang: pakai bidang milik akun
+        if ($user->hasRole(['monev_bidang', 'user_bidang'])) {
+            $bidangId = (int) $user->bidang_id;
+
+            return redirect()->route('reports.bidang.index', [
+                'bidang_id' => $bidangId,
+            ]);
+        }
+
+        // Role lintas bidang: arahkan ke bidang paling atas (mengikuti urutan dropdown)
+        // Dropdown kamu dan controller juga pakai orderBy('nama'), jadi kita samakan.
+        $firstBidangId = Bidang::orderBy('nama')->value('id');
+
+        // Kalau belum ada data bidang, fallback
+        if (!$firstBidangId) {
+            return redirect()->route('activities.index');
+        }
+
+        return redirect()->route('reports.bidang.index', [
+            'bidang_id' => (int) $firstBidangId,
+        ]);
+    })->name('home');
+
+    // Profile (Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -29,49 +59,85 @@ Route::middleware('auth')->group(function () {
     | Activities (Laporan Kegiatan)
     |--------------------------------------------------------------------------
     */
-    Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
-    Route::get('/activities/create', [ActivityController::class, 'create'])->name('activities.create');
-    Route::post('/activities', [ActivityController::class, 'store'])->name('activities.store');
-    Route::get('/activities/{activity}', [ActivityController::class, 'show'])->name('activities.show');
-    Route::get('/activities/{activity}/edit', [ActivityController::class, 'edit'])->name('activities.edit');
-    Route::put('/activities/{activity}', [ActivityController::class, 'update'])->name('activities.update');
-    Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->name('activities.destroy');
 
-    // Seleksi triwulan
+    Route::get('/activities', [ActivityController::class, 'index'])
+        ->name('activities.index');
+
+    Route::get('/activities/create', [ActivityController::class, 'create'])
+        ->middleware('can:activities.create')
+        ->name('activities.create');
+
+    Route::post('/activities', [ActivityController::class, 'store'])
+        ->middleware('can:activities.create')
+        ->name('activities.store');
+
+    Route::get('/activities/{activity}/edit', [ActivityController::class, 'edit'])
+        ->name('activities.edit');
+
+    Route::patch('/activities/{activity}', [ActivityController::class, 'update'])
+        ->name('activities.update');
+
+    Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])
+        ->name('activities.destroy');
+
+    // Bulk actions untuk sortir ke/dari laporan monev
+    Route::post('/activities/bulk-add-monev', [ActivityController::class, 'bulkAddToMonev'])
+        ->middleware('can:reports.sort')
+        ->name('activities.bulk-add-monev');
+
+    Route::post('/activities/bulk-remove-monev', [ActivityController::class, 'bulkRemoveFromMonev'])
+        ->middleware('can:reports.sort')
+        ->name('activities.bulk-remove-monev');
+
     Route::post('/activities/{activity}/select-quarterly', [ActivityController::class, 'selectQuarterly'])
+        ->middleware('can:reports.sort')
         ->name('activities.select-quarterly');
 
     /*
     |--------------------------------------------------------------------------
-    | Laporan Mingguan per Bidang
+    | Laporan Bidang
     |--------------------------------------------------------------------------
+    | Dipakai oleh: super_admin, tim_monev, sekre_pimpinan, monev_bidang, user_bidang, pimpinan
     */
-    Route::get('/laporan-bidang/mingguan', [ActivityController::class, 'weeklyIndex'])
-        ->name('reports.bidang.index');
+    Route::prefix('laporan-bidang')
+        ->middleware('can:reports.bidang.view')
+        ->name('reports.bidang.')
+        ->group(function () {
+            Route::get('/mingguan', [ActivityController::class, 'weeklyIndex'])->name('index');
+            Route::get('/mingguan/{year}/{week}', [ActivityController::class, 'weeklyReport'])->name('weekly.report');
+            Route::get('/bulanan/{year}/{month}', [ActivityController::class, 'monthlyReport'])->name('monthly.report');
+        });
 
-    Route::get('/laporan-bidang/mingguan/{year}/{week}', [ActivityController::class, 'weeklyReport'])
-        ->name('reports.bidang.weekly.report');
-
-    Route::get('/laporan-bidang/bulanan/{year}/{month}', [ActivityController::class, 'monthlyReport'])
-        ->name('reports.bidang.monthly.report');
-    /*
-    |--------------------------------------------------------------------------
-    | Report PDF Export
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/reports/bidang/export/weekly', [ActivityController::class, 'weeklyExportRange'])
-        ->name('reports.bidang.export.weekly');
-
-    Route::get('/reports/bidang/export/monthly', [ActivityController::class, 'monthlyExportRange'])
-        ->name('reports.bidang.export.monthly');
-
-    Route::get('/reports/bidang/export/quarterly', [ActivityController::class, 'quarterlyExportRange'])
-        ->name('reports.bidang.export.quarterly');
-
+    // Export PDF laporan bidang
+    Route::prefix('reports/bidang/export')
+        ->middleware('can:reports.bidang.view')
+        ->name('reports.bidang.export.')
+        ->group(function () {
+            Route::get('/weekly', [ActivityController::class, 'weeklyExportRange'])->name('weekly');
+            Route::get('/monthly', [ActivityController::class, 'monthlyExportRange'])->name('monthly');
+            Route::get('/quarterly', [ActivityController::class, 'quarterlyExportRange'])->name('quarterly');
+        });
 
     /*
     |--------------------------------------------------------------------------
-    | Activity Files (Data Pendukung / Lampiran PDF)
+    | Laporan Monitoring & Evaluasi
+    |--------------------------------------------------------------------------
+    | Dipakai oleh: super_admin, tim_monev, sekre_pimpinan, monev_bidang
+    */
+    Route::prefix('laporan-monitoring-evaluasi')
+        ->middleware('can:reports.monev.view')
+        ->name('reports.monev.')
+        ->group(function () {
+            Route::get('/', [ActivityController::class, 'monevDashboard'])->name('index');
+            Route::get('/activities', [ActivityController::class, 'monevIndex'])->name('activities');
+            Route::get('/export/weekly', [ActivityController::class, 'monevWeeklyExportRange'])->name('export.weekly');
+            Route::get('/export/monthly', [ActivityController::class, 'monevMonthlyExportRange'])->name('export.monthly');
+            Route::get('/export/quarterly', [ActivityController::class, 'monevQuarterlyExportRange'])->name('export.quarterly');
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lampiran file kegiatan
     |--------------------------------------------------------------------------
     */
     Route::post('/activities/{activity}/files', [ActivityFileController::class, 'store'])
@@ -85,7 +151,7 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Activity Notes (Catatan Monev)
+    | Catatan monev
     |--------------------------------------------------------------------------
     */
     Route::post('/activities/{activity}/notes', [ActivityNoteController::class, 'store'])
@@ -96,44 +162,29 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | IKU Management
+    | Konfigurasi
     |--------------------------------------------------------------------------
     */
-    Route::get('/ikus', [IkuController::class, 'index'])->name('ikus.index');
-    Route::get('/ikus/create', [IkuController::class, 'create'])->name('ikus.create');
-    Route::post('/ikus', [IkuController::class, 'store'])->name('ikus.store');
-    Route::get('/ikus/{iku}/edit', [IkuController::class, 'edit'])->name('ikus.edit');
-    Route::put('/ikus/{iku}', [IkuController::class, 'update'])->name('ikus.update');
-    Route::delete('/ikus/{iku}', [IkuController::class, 'destroy'])->name('ikus.destroy');
-    Route::patch('/ikus/{iku}/toggle-active', [IkuController::class, 'toggleActive'])->name('ikus.toggle-active');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Bidang Management + Pembuatan User Bidang & Monev Bidang
-    |--------------------------------------------------------------------------
-    | Hanya super_admin yang bisa akses, dicek di BidangController::ensureCanManageBidangs()
-    */
-    Route::get('/bidangs', [BidangController::class, 'index'])->name('bidangs.index');
-    Route::get('/bidangs/create', [BidangController::class, 'create'])->name('bidangs.create');
-    Route::post('/bidangs', [BidangController::class, 'store'])->name('bidangs.store');
-    Route::get('/bidangs/{bidang}/edit', [BidangController::class, 'edit'])->name('bidangs.edit');
-    Route::put('/bidangs/{bidang}', [BidangController::class, 'update'])->name('bidangs.update');
-    Route::delete('/bidangs/{bidang}', [BidangController::class, 'destroy'])->name('bidangs.destroy');
+    // IKU (super_admin, tim_monev, sekre_pimpinan)
+    Route::resource('ikus', IkuController::class)
+        ->middleware('can:config.iku');
 
-    /*
-    |--------------------------------------------------------------------------
-    | User Management (Super Admin)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-    Route::post('/users', [UserController::class, 'store'])->name('users.store');
-    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::patch('/ikus/{iku}/toggle-active', [IkuController::class, 'toggleActive'])
+        ->middleware('can:config.iku')
+        ->name('ikus.toggle-active');
 
-    /* LOGS */
+    // Bidang (super_admin)
+    Route::resource('bidangs', BidangController::class)
+        ->middleware('can:config.bidang');
+
+    // User (super_admin)
+    Route::resource('users', UserController::class)
+        ->middleware('can:config.users');
+
+    // Logs / Catatan Aktivitas (super_admin, tim_monev, sekre_pimpinan)
     Route::get('/logs', [SystemLogController::class, 'index'])
+        ->middleware('can:activitylog.view')
         ->name('logs.index');
 });
 

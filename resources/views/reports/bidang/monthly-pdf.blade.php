@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>{{ $title ?? 'Laporan Mingguan' }}</title>
+    <title>{{ $title ?? 'Laporan Bulanan' }}</title>
 
     <style>
         /* Global */

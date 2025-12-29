@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('systemlog', absolute: false));
+        return redirect()->to($request->user()->defaultBidangReportUrl());
     }
 
     /**

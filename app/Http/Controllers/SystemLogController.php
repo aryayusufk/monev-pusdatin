@@ -47,7 +47,7 @@ class SystemLogController extends Controller
             ];  
         })->toArray();
 
-        return view('systemlog', [
+        return view('logs.index', [
             'columns' => $columns,
             'rows'    => $rows,
         ]);

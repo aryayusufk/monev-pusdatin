@@ -1,6 +1,6 @@
 <x-app-layout>
 
-    <div class="flex flex-col p-6 gap-6 bg-bg-base-secondary h-screen max-h-screen">
+    <div class="flex flex-col p-6 gap-6 bg-bg-base-secondary">
         <div class="flex flex-row justify-between items-center w-full">
             <div class="flex grow">
                 <h1 class="text-2xl font-semibold text-acc-base-default">Laporan Bidang</h1>
@@ -69,8 +69,8 @@
         <div class="flex flex-row justify-end">
             @php
                 $selectedYear = (int) request('year', now()->year);
-                $period = request('period'); // 'month' | 'quarter'
-                $value = request('value'); // 1..12 | 1..4
+                $period = request('period');
+                $value = request('value');
 
                 $carry = array_filter(
                     [
@@ -106,7 +106,6 @@
                 }
             @endphp
 
-            {{-- ✅ TOMBOL HANYA MUNCUL JIKA FILTER LENGKAP --}}
             @if ($buttonHref)
                 <a href="{{ $buttonHref }}">
                     <x-primary-button>

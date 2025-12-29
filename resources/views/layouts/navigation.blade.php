@@ -1,4 +1,4 @@
-<nav class="bg-bg-base-default border-r border-bor-base-default w-[180px]">
+<nav class="bg-bg-base-default border-r border-bor-base-default">
     <!-- Primary Navigation Menu -->
     <div class="flex flex-col w-full h-full">
         <div class="flex flex-col h-full justify-between">
@@ -11,56 +11,98 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false, openLaporanBidang: false }">
+                @php
+                    $user = Auth::user();
+                    $navBidangsFiltered = $navBidangs;
 
-                    <button type="button" @click="openLaporanBidang = !openLaporanBidang"
-                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
-                        <span>Laporan Bidang</span>
-                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
-                            x-bind:class="openLaporanBidang ? 'rotate-180' : ''" />
-                    </button>
+                    // Role berbasis bidang: hanya tampilkan bidang miliknya.
+                    if ($user && $user->hasRole(['monev_bidang', 'user_bidang'])) {
+                        $navBidangsFiltered = collect($navBidangs)->where('id', (int) $user->bidang_id);
+                    }
+                @endphp
 
-                    <div x-show="openLaporanBidang" x-collapse class="flex flex-col gap-2 p-2">
-                        @forelse ($navBidangs as $bidang)
-                            <x-nav-link :href="route('reports.bidang.index', ['bidang_id' => $bidang->id])" :active="request()->routeIs('reports.bidang.index') &&
-                                (int) request('bidang_id') === $bidang->id">
-                                {{ $bidang->nama }}
-                            </x-nav-link>
-                        @empty
-                            <div class="text-sm text-txt-base-default">
-                                Belum ada bidang
-                            </div>
-                        @endforelse
-                    </div>
+                <div class="flex flex-col gap-2" x-data="{ openKonfigurasi: false, openLaporanBidang: false, openLaporanMonev: false }">
 
-                    <x-nav-link href="#" :active="false">
-                        Laporan Monitoring & Evaluasi
-                    </x-nav-link>
-                    <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
-                        {{ __('Buat Laporan') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('systemlog')" :active="request()->routeIs('systemlog')">
-                        {{ __('Catatan Aktivitas') }}
-                    </x-nav-link>
+                    @can('reports.bidang.view')
+                        <button type="button" @click="openLaporanBidang = !openLaporanBidang"
+                            class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                            <span>Laporan Bidang</span>
+                            <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
+                                x-bind:class="openLaporanBidang ? 'rotate-180' : ''" />
+                        </button>
 
-                    <button type="button" @click="openKonfigurasi = !openKonfigurasi"
-                        class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
-                        <span>Konfigurasi</span>
-                        <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
-                            x-bind:class="openKonfigurasi ? 'rotate-180' : ''" />
-                    </button>
+                        <div x-show="openLaporanBidang" x-collapse class="flex flex-col gap-2 p-2">
+                            @forelse ($navBidangsFiltered as $bidang)
+                                <x-nav-link :href="route('reports.bidang.index', ['bidang_id' => $bidang->id])" :active="request()->routeIs('reports.bidang.index') &&
+                                    (int) request('bidang_id') === $bidang->id">
+                                    {{ $bidang->nama }}
+                                </x-nav-link>
+                            @empty
+                                <div class="text-sm text-txt-base-default">Belum ada bidang</div>
+                            @endforelse
+                        </div>
+                    @endcan
 
-                    <div x-show="openKonfigurasi" x-collapse class="flex flex-col gap-2 p-2">
-                        <x-nav-link :href="route('ikus.index')" :active="request()->routeIs('ikus.index')">
-                            {{ __('Manajemen IKU') }}
+                    @can('reports.monev.view')
+                        <button type="button" @click="openLaporanMonev = !openLaporanMonev"
+                            class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out whitespace-nowrap">
+                            <span>Laporan Monitoring & Evaluasi</span>
+                            <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
+                                x-bind:class="openLaporanMonev ? 'rotate-180' : ''" />
+                        </button>
+
+                        <div x-show="openLaporanMonev" x-collapse class="flex flex-col gap-2 p-2">
+                            @forelse ($navBidangsFiltered as $bidang)
+                                <x-nav-link :href="route('reports.monev.index', ['bidang_id' => $bidang->id])" :active="request()->routeIs('reports.monev.index') &&
+                                    (int) request('bidang_id') === $bidang->id">
+                                    {{ $bidang->nama }}
+                                </x-nav-link>
+                            @empty
+                                <div class="text-sm text-txt-base-default">Belum ada bidang</div>
+                            @endforelse
+                        </div>
+                    @endcan
+
+                    @can('activities.create')
+                        <x-nav-link :href="route('activities.create')" :active="request()->routeIs('activities.create')">
+                            {{ __('Buat Laporan') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
-                            {{ __('Manajemen Pengguna') }}
+                    @endcan
+
+                    @can('activitylog.view')
+                        <x-nav-link :href="route('logs.index')" :active="request()->routeIs('logs.index')">
+                            {{ __('Catatan Aktivitas') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('bidangs.index')" :active="request()->routeIs('bidangs.index')">
-                            {{ __('Manajemen Bidang') }}
-                        </x-nav-link>
-                    </div>
+                    @endcan
+
+                    @if (Gate::any(['config.iku', 'config.users', 'config.bidang']))
+                        <button type="button" @click="openKonfigurasi = !openKonfigurasi"
+                            class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                            <span>Konfigurasi</span>
+                            <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
+                                x-bind:class="openKonfigurasi ? 'rotate-180' : ''" />
+                        </button>
+
+                        <div x-show="openKonfigurasi" x-collapse class="flex flex-col gap-2 p-2">
+                            @can('config.iku')
+                                <x-nav-link :href="route('ikus.index')" :active="request()->routeIs('ikus.index')">
+                                    {{ __('Manajemen IKU') }}
+                                </x-nav-link>
+                            @endcan
+
+                            @can('config.users')
+                                <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+                                    {{ __('Manajemen Pengguna') }}
+                                </x-nav-link>
+                            @endcan
+
+                            @can('config.bidang')
+                                <x-nav-link :href="route('bidangs.index')" :active="request()->routeIs('bidangs.index')">
+                                    {{ __('Manajemen Bidang') }}
+                                </x-nav-link>
+                            @endcan
+                        </div>
+                    @endif
                 </div>
             </div>
 
