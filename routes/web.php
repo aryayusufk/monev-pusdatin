@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ActivityFileController;
-use App\Http\Controllers\ActivityNoteController;
 use App\Http\Controllers\BidangController;
 use App\Http\Controllers\IkuController;
 use App\Http\Controllers\ProfileController;
@@ -148,17 +147,6 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/files/{file}', [ActivityFileController::class, 'destroy'])
         ->name('files.destroy');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Catatan monev
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/activities/{activity}/notes', [ActivityNoteController::class, 'store'])
-        ->name('activities.notes.store');
-
-    Route::delete('/notes/{note}', [ActivityNoteController::class, 'destroy'])
-        ->name('notes.destroy');
 
     /*
     |--------------------------------------------------------------------------
