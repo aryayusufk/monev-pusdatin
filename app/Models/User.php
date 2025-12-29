@@ -35,19 +35,22 @@ class User extends Authenticatable
 
     public function bidang()
     {
-        // User milik satu bidang (kecuali superadmin/tim monev tertentu bisa null)
         return $this->belongsTo(\App\Models\Bidang::class);
     }
 
     public function roles()
     {
-        // User bisa punya banyak role (super_admin, tim_monev, user_bidang, dst.)
         return $this->belongsToMany(\App\Models\Role::class)->withTimestamps();
     }
 
-    public function hasRole(string $name): bool
+    public function hasRole(string|array $names): bool
     {
-        // Dipakai di policy dan blade: $user->hasRole('tim_monev')
-        return $this->roles()->where('name', $name)->exists();
+        $names = is_array($names) ? $names : [$names];
+
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains(fn($r) => in_array($r->name, $names, true));
+        }
+
+        return $this->roles()->whereIn('name', $names)->exists();
     }
 }

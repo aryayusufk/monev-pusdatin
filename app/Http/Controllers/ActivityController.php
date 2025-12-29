@@ -908,10 +908,18 @@ class ActivityController extends Controller
     {
         $user = $request->user();
 
+        // Role berbasis bidang: HARUS bidang miliknya, dan kalau request pakai bidang lain -> 403
         if ($user && ($user->hasRole('monev_bidang') || $user->hasRole('user_bidang'))) {
-            return (int) $user->bidang_id;
+            $ownBidangId = (int) $user->bidang_id;
+
+            if ($request->filled('bidang_id') && (int) $request->bidang_id !== $ownBidangId) {
+                abort(403);
+            }
+
+            return $ownBidangId;
         }
 
+        // Role yang boleh lintas bidang: gunakan bidang_id dari request jika ada
         if ($request->filled('bidang_id')) {
             return (int) $request->bidang_id;
         }
@@ -1002,7 +1010,7 @@ class ActivityController extends Controller
         $user = $request->user();
         if (!$user) return false;
 
-        // sesuaikan role yang kamu pakai untuk tim monev pusat
-        return $user->hasRole('super_admin') || $user->hasRole('monev_pusat');
+        // Role pusat yang boleh lihat semua bidang (tanpa dikunci bidang sendiri)
+        return $user->hasRole(['super_admin', 'tim_monev', 'sekre_pimpinan', 'pimpinan']);
     }
 }
