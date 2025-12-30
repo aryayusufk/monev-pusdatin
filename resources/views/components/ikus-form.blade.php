@@ -54,7 +54,7 @@
         <div class="flex flex-col gap-2 w-full">
             <x-input-label for="bidang_id" :value="__('Bidang')" />
 
-            <x-select-input id="bidang_id" name="bidang_ids[]" class="block w-full">
+            <x-select-input id="bidang_id" name="bidang_ids[]" class="block w-full" multiple>
                 <option value="" disabled @selected(empty($selectedBidangIds))>Pilih Bidang</option>
 
                 @foreach ($bidangs as $bidang)

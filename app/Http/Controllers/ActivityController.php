@@ -992,6 +992,7 @@ class ActivityController extends Controller
                 'subtitle' => $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y'),
                 'start' => $start->toDateString(),
                 'end' => $end->toDateString(),
+                'month' => $month,
             ];
         }
 
