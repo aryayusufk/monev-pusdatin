@@ -165,7 +165,7 @@
                             'reports.monev.export.monthly',
                             array_merge($baseParams, [
                                 'year' => (int) request('year', now()->year),
-                                'month' => (int) ($card['month'] ?? 0),
+                                'month' => (int) $card['month'],
                                 'title' => $card['title'],
                             ]),
                         );

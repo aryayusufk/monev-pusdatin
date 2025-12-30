@@ -73,7 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/activities/{activity}/edit', [ActivityController::class, 'edit'])
         ->name('activities.edit');
 
-    Route::patch('/activities/{activity}', [ActivityController::class, 'update'])
+    Route::match(['PUT', 'PATCH'], '/activities/{activity}', [ActivityController::class, 'update'])
         ->name('activities.update');
 
     Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])
