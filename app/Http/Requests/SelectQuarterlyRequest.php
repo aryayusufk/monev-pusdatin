@@ -22,9 +22,6 @@ class SelectQuarterlyRequest extends FormRequest
             // true = pilih jadi laporan triwulan
             // false = batalkan dari laporan triwulan
             'select' => ['required','boolean'],
-
-            // scope WAJIB hanya kalau select = true (1)
-            'selected_quarterly_scope' => ['required_if:select,1','in:global,bidang'],
         ];
     }
 }

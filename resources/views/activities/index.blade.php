@@ -17,15 +17,6 @@
 
 
             <div id="bulkActionBar" class="hidden flex items-center gap-2">
-                @if (!$canGlobal)
-                    <input type="hidden" name="selected_quarterly_scope" value="bidang" form="bulkSelectForm">
-                @else
-                    <select name="selected_quarterly_scope" form="bulkSelectForm">
-                        <option value="bidang" selected>Bidang</option>
-                        <option value="global">Global</option>
-                    </select>
-                @endif
-
                 @if (!($monevMode ?? false))
                     <button type="submit" form="bulkSelectForm"
                         class="px-3 py-2 rounded-md bg-acc-base-default text-white text-sm font-medium">

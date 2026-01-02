@@ -13,25 +13,6 @@
                     <input type="hidden" name="bidang_id" value="{{ request('bidang_id') }}">
                 @endif
 
-                @php
-                    $canGlobal =
-                        auth()->check() &&
-                        (auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('monev_pusat'));
-                    $scopeVal = request('scope', 'bidang');
-                    if (!$canGlobal) {
-                        $scopeVal = 'bidang';
-                    }
-                @endphp
-
-                @if ($canGlobal)
-                    <x-select-input name="scope" class="w-full" onchange="this.form.submit()">
-                        <option value="bidang" @selected($scopeVal === 'bidang')>Scope: Bidang</option>
-                        <option value="global" @selected($scopeVal === 'global')>Scope: Global</option>
-                    </x-select-input>
-                @else
-                    <input type="hidden" name="scope" value="bidang">
-                @endif
-
                 <x-select-input name="iku_id" class="w-full" onchange="this.form.submit()">
                     <option value="">IKU</option>
                     @foreach ($ikus as $iku)
@@ -94,7 +75,6 @@
                     [
                         'bidang_id' => request('bidang_id'),
                         'iku_id' => request('iku_id'),
-                        'scope' => $scopeVal,
                     ],
                     fn($v) => filled($v),
                 );
@@ -141,7 +121,6 @@
                         [
                             'bidang_id' => request('bidang_id'),
                             'iku_id' => request('iku_id'),
-                            'scope' => $scopeVal,
                         ],
                         fn($v) => filled($v),
                     );

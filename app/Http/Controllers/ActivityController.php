@@ -136,12 +136,6 @@ class ActivityController extends Controller
 
         $q = Activity::with(['bidang', 'ikus', 'files'])
             ->selectedQuarterly(true) // <-- pembeda utama dari index()
-            ->when($request->filled('scope'), function (Builder $x) use ($request) {
-                $x->where('selected_quarterly_scope', $request->scope);
-            })
-            ->when($request->filled('scope'), function (Builder $q) use ($request) {
-                $q->where('selected_quarterly_scope', $request->scope);
-            })
             ->when($request->filled('start') && $request->filled('end'), function (Builder $x) use ($request) {
                 $x->whereBetween('occurred_at', [
                     Carbon::parse($request->start)->startOfDay(),
@@ -367,24 +361,10 @@ class ActivityController extends Controller
             return back()->with('error', 'Pilih minimal 1 laporan kegiatan.');
         }
 
-        // default aman: bidang
-        $scope = 'bidang';
-
-        // hanya role tertentu boleh memilih global
-        if ($this->canUseGlobalScope($request)) {
-            $scope = $request->input('selected_quarterly_scope', 'bidang');
-        }
-
-        // validasi sesuai CHECK constraint DB
-        if (!in_array($scope, ['bidang', 'global'], true)) {
-            return back()->with('error', 'Scope tidak valid. Pilih: bidang / global.');
-        }
-
         Activity::query()
             ->whereIn('id', $ids)
             ->update([
                 'is_selected_quarterly' => true,
-                'selected_quarterly_scope' => $scope,
                 'selected_quarterly_by' => $request->user()->id,
                 'selected_quarterly_at' => now(),
             ]);
@@ -409,7 +389,6 @@ class ActivityController extends Controller
             ->whereIn('id', $ids)
             ->update([
                 'is_selected_quarterly' => false,
-                'selected_quarterly_scope' => null,
                 'selected_quarterly_by' => null,
                 'selected_quarterly_at' => null,
             ]);
@@ -422,9 +401,6 @@ class ActivityController extends Controller
         $data = $request->validated();
 
         $activity->is_selected_quarterly = (bool) $data['select'];
-        $activity->selected_quarterly_scope = $activity->is_selected_quarterly
-            ? $data['selected_quarterly_scope']
-            : null;
         $activity->selected_quarterly_by = $request->user()->id;
         $activity->selected_quarterly_at = now();
         $activity->save();
