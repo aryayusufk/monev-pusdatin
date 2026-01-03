@@ -16,21 +16,19 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans antialiased min-h-[100dvh] bg-bg-base-secondary overflow-x-hidden">
-    <div class="md:hidden min-h-[100dvh] flex items-center justify-center p-6">
-        <div class="flex gap-6 p-6 bg-bg-base-default border border-bor-base-default rounded-lg text-center max-w-sm">
-            <p class="font-semibold text-txt-base-default">Tampilan mobile belum didukung.</p>
-            <p class="text-sm text-txt-base-secondary">
-                Silakan gunakan tablet, laptop, atau desktop.
-            </p>
+<body class="font-sans antialiased">
+    <div class="flex md:hidden min-h-dvh">
+        <div class="m-auto text-center p-6 text-slate-600">
+            <p class="font-semibold">Tampilan mobile tidak didukung.</p>
+            <p class="text-sm">Silakan gunakan tablet/laptop/desktop.</p>
         </div>
     </div>
 
-    <div class="hidden md:flex min-h-[100dvh] w-full">
+    <div class="hidden md:flex h-dvh w-full overflow-hidden">
         @include('layouts.navigation')
 
-        <div class="flex flex-col flex-1 min-w-0">
-            <main class="flex-1 w-full">
+        <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+            <main class="flex-1 w-full min-h-0 overflow-hidden">
                 {{ $slot }}
             </main>
         </div>
