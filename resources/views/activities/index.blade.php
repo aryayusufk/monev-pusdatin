@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="flex flex-col p-6 gap-6 bg-bg-base-secondary">
+    <div class="flex flex-col p-6 gap-6 bg-bg-base-secondary h-dvh min-h-0 overflow-hidden">
         <div class="flex flex-row justify-between items-center w-full">
             <div class="flex flex-row gap-6 items-center">
                 <x-icon-button onclick="history.back()">
@@ -46,7 +46,7 @@
             <div id="bulkHiddenInputs"></div>
         </form>
 
-        <x-table id="activitiesTable" subheading="" heading="" :columns="$columns" :rows="$rows"
+        <x-table class="flex-1 min-h-0" id="activitiesTable" subheading="" heading="" :columns="$columns" :rows="$rows"
             :showCheckbox="true" :showActions="true" checkboxName="selected" editRoute="activities.edit"
             deleteRoute="activities.destroy" />
     </div>

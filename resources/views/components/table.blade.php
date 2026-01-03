@@ -15,14 +15,14 @@
 @endphp
 
 <div id="{{ $tableId }}"
-    class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm h-full min-h-0">
+    class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm flex-1 min-h-0">
 
     <div class="flex flex-col flex-1 gap-2 min-h-0">
         <table class="table-fixed w-full">
             <thead>
                 <tr class="flex flex-row flex-1 items-center p-4 gap-4 border-b border-bor-base-default">
                     @foreach ($columns as $column)
-                        <th class="w-full text-left text-sm font-semibold text-txt-base-primary">
+                        <th class="flex-1 text-left text-sm font-semibold text-txt-base-primary">
                             {{ $column }}
                         </th>
                     @endforeach
@@ -49,7 +49,7 @@
                             class="flex flex-row flex-1 gap-4 px-4 py-4 border-b border-bor-base-default last:border-b-0">
                             @foreach ($row as $key => $cell)
                                 @continue($key === 'id')
-                                <td class="w-full text-justify text-sm leading-relaxed text-txt-base-primary">
+                                <td class="flex-1 text-justify text-sm leading-relaxed text-txt-base-primary">
                                     {!! $cell !!}
                                 </td>
                             @endforeach
@@ -63,7 +63,7 @@
                             @endif
 
                             @if ($showActions)
-                                <td class="flex flex-col items-center justify-end gap-2">
+                                <td class="shrink-0 w-8 flex flex-col items-center justify-end gap-2">
                                     @if ($editRoute)
                                         <a href="{{ route($editRoute, $row['id']) }}"
                                             class="text-xs font-medium text-acc-base-default hover:underline">
