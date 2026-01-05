@@ -32,7 +32,6 @@ return new class extends Migration {
             // status siklus & seleksi triwulan
             $t->enum('status', ['draft','submitted','archived'])->default('submitted');
             $t->boolean('is_selected_quarterly')->default(false);
-            $t->enum('selected_quarterly_scope', ['bidang','global'])->nullable();
             $t->foreignId('selected_quarterly_by')->nullable()->constrained('users')->nullOnDelete();
             $t->timestampTz('selected_quarterly_at')->nullable();
 

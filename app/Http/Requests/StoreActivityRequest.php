@@ -16,11 +16,11 @@ class StoreActivityRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'kegiatan'  => ['required','string','max:1000'],
-            'tindak_lanjut' => ['nullable','string','max:1000'],
-            'kendala'       => ['nullable','string','max:1000'],
-            'percepatan'    => ['nullable','string','max:1000'],
-            'proyeksi_kedepan' => ['nullable','string','max:1000'],
+            'kegiatan'  => ['required','string','max:4000'],
+            'tindak_lanjut' => ['nullable','string','max:4000'],
+            'kendala'       => ['nullable','string','max:4000'],
+            'percepatan'    => ['nullable','string','max:4000'],
+            'proyeksi_kedepan' => ['nullable','string','max:4000'],
 
             //KALO INGIN JADI MANUAL HAPUS OCCURED_AT
             //'occurred_at'   => ['required','date'],

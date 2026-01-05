@@ -23,12 +23,11 @@ class UpdateActivityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kegiatan'  => ['sometimes','string','max:1000'],
-            'tindak_lanjut' => ['sometimes','nullable','string','max:1000'],
-            'kendala'       => ['sometimes','nullable','string','max:1000'],
-            'percepatan'    => ['sometimes','nullable','string','max:1000'],
-            'proyeksi_kedepan' => ['sometimes','nullable','string','max:1000'],
-
+            'kegiatan'  => ['sometimes','string','max:4000'],
+            'tindak_lanjut' => ['sometimes','nullable','string','max:4000'],
+            'kendala'       => ['sometimes','nullable','string','max:4000'],
+            'percepatan'    => ['sometimes','nullable','string','max:4000'],
+            'proyeksi_kedepan' => ['sometimes','nullable','string','max:4000'],
             //KALO INGIN MANUAL SOMETIMES GANTI JADI NULLABLE
             'occurred_at'   => ['nullable','date'],
 

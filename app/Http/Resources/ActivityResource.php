@@ -34,9 +34,8 @@ class ActivityResource extends JsonResource
             'iso_week'    => $this->iso_week,
 
             // Seleksi triwulan
-            'is_selected_quarterly'  => (bool) $this->is_selected_quarterly,
-            'selected_quarterly_scope' => $this->selected_quarterly_scope,
-            'selected_quarterly_at'    => optional($this->selected_quarterly_at)->toIso8601String(),
+            'is_selected_quarterly'   => (bool) $this->is_selected_quarterly,
+            'selected_quarterly_at'   => optional($this->selected_quarterly_at)->toIso8601String(),
         ];
     }
 }
