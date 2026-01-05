@@ -25,7 +25,6 @@ class Activity extends Model
         'iso_week',
         'status',
         'is_selected_quarterly',
-        'selected_quarterly_scope',
         'selected_quarterly_by',
         'selected_quarterly_at',
         'created_by',

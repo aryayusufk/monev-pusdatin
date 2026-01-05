@@ -401,18 +401,24 @@ class ActivityController extends Controller
         $data = $request->validated();
 
         $activity->is_selected_quarterly = (bool) $data['select'];
-        $activity->selected_quarterly_by = $request->user()->id;
-        $activity->selected_quarterly_at = now();
+
+        if ($activity->is_selected_quarterly) {
+            $activity->selected_quarterly_by = $request->user()->id;
+            $activity->selected_quarterly_at = now();
+        } else {
+            $activity->selected_quarterly_by = null;
+            $activity->selected_quarterly_at = null;
+        }
+
         $activity->save();
 
         $actor = $request->user();
         $roleStr = $actor->roles->pluck('name')->join(', ');
         $statusText = $activity->is_selected_quarterly ? 'memilih' : 'membatalkan pilihan';
-        $scope = $activity->selected_quarterly_scope ?? '-';
 
         SystemLog::write(
             'activity.quarterly_selection',
-            "{$actor->name} ({$roleStr}) {$statusText} laporan kegiatan (ID: {$activity->id}) untuk laporan triwulan (scope: {$scope})"
+            "{$actor->name} ({$roleStr}) {$statusText} laporan kegiatan (ID: {$activity->id}) untuk laporan triwulan"
         );
 
         return back()->with('success', 'Status seleksi triwulan diperbarui.');
@@ -707,17 +713,8 @@ class ActivityController extends Controller
         $start = Carbon::parse($request->start)->startOfDay();
         $end = Carbon::parse($request->end)->endOfDay();
 
-        $scope = 'bidang';
-        if ($this->canUseGlobalScope($request)) {
-            $scope = $request->input('scope', 'bidang');
-        }
-        if (!in_array($scope, ['bidang', 'global'], true)) {
-            $scope = 'bidang';
-        }
-
         $query = Activity::with(['bidang', 'files', 'ikus'])
             ->selectedQuarterly(true)
-            ->where('selected_quarterly_scope', $scope)
             ->whereBetween('occurred_at', [$start, $end]);
 
         $this->applyBidangFilter($query, $request);
@@ -748,17 +745,8 @@ class ActivityController extends Controller
         $start = Carbon::create($year, $month, 1)->startOfDay();
         $end   = $start->copy()->endOfMonth()->endOfDay();
 
-        $scope = 'bidang';
-        if ($this->canUseGlobalScope($request)) {
-            $scope = $request->input('scope', 'bidang');
-        }
-        if (!in_array($scope, ['bidang', 'global'], true)) {
-            $scope = 'bidang';
-        }
-
         $query = Activity::with(['bidang', 'files', 'ikus'])
             ->selectedQuarterly(true)
-            ->where('selected_quarterly_scope', $scope)
             ->whereBetween('occurred_at', [$start, $end]);
 
         $this->applyBidangFilter($query, $request);
@@ -776,7 +764,7 @@ class ActivityController extends Controller
             'monthName' => $start->translatedFormat('F'),
             'groups'    => $this->groupActivitiesByBidang($activities),
         ])->setPaper('a4', 'landscape')
-            ->download("Laporan-Monev-Bulanan-{$year}-{$month}.pdf");
+        ->download("Laporan-Monev-Bulanan-{$year}-{$month}.pdf");
     }
 
     public function monevQuarterlyExportRange(Request $request)
@@ -790,17 +778,8 @@ class ActivityController extends Controller
         $start = Carbon::create($year, $startMonth, 1)->startOfDay();
         $end = $start->copy()->addMonths(2)->endOfMonth()->endOfDay();
 
-        $scope = 'bidang';
-        if ($this->canUseGlobalScope($request)) {
-            $scope = $request->input('scope', 'bidang');
-        }
-        if (!in_array($scope, ['bidang', 'global'], true)) {
-            $scope = 'bidang';
-        }
-
         $query = Activity::with(['bidang', 'files', 'ikus'])
             ->selectedQuarterly(true)
-            ->where('selected_quarterly_scope', $scope)
             ->whereBetween('occurred_at', [$start, $end]);
 
         $this->applyBidangFilter($query, $request);
@@ -818,7 +797,7 @@ class ActivityController extends Controller
             'quarter' => $quarter,
             'groups'  => $this->groupActivitiesByBidang($activities),
         ])->setPaper('a4', 'landscape')
-            ->download("Laporan-Monev-Triwulan-{$year}-Q{$quarter}.pdf");
+        ->download("Laporan-Monev-Triwulan-{$year}-Q{$quarter}.pdf");
     }
 
 
