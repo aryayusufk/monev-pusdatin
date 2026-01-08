@@ -1,6 +1,6 @@
-<nav class="bg-bg-base-default border-r border-bor-base-default">
+<nav class="bg-bg-base-default border-r border-bor-base-default w-72 shrink-0 overflow-x-hidden">
     <!-- Primary Navigation Menu -->
-    <div class="flex flex-col w-full h-full">
+    <div class="flex flex-col w-full h-full min-w-0">
         <div class="flex flex-col h-full justify-between">
             <div class="flex flex-col py-8 gap-4">
                 <!-- Logo -->
@@ -47,7 +47,7 @@
 
                     @can('reports.monev.view')
                         <button type="button" @click="openLaporanMonev = !openLaporanMonev"
-                            class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out whitespace-nowrap">
+                            class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
                             <span>Laporan Monitoring & Evaluasi</span>
                             <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
                                 x-bind:class="openLaporanMonev ? 'rotate-180' : ''" />
