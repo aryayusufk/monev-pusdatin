@@ -28,7 +28,7 @@
         @include('layouts.navigation')
 
         <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-            <main class="flex-1 w-full min-h-0 overflow-hidden">
+            <main class="flex-1 w-full min-h-0 overflow-y-auto">
                 {{ $slot }}
             </main>
         </div>
