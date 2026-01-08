@@ -12,90 +12,93 @@
 
 @php
     $tableId = $attributes->get('id') ?? 'tbl_' . substr(md5(uniqid('', true)), 0, 8);
+
+    // Build grid template: dynamic columns = 1fr, checkbox/actions = fixed width
+    $gridParts = array_fill(0, count($columns), 'minmax(0, 1fr)');
+
+    if ($showCheckbox) $gridParts[] = '24px'; // w-6
+    if ($showActions)  $gridParts[] = '64px'; // space for "Ubah/Hapus" column
+
+    $gridTemplate = implode(' ', $gridParts);
 @endphp
 
 <div id="{{ $tableId }}"
-    class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm flex-1 min-h-0">
+     class="flex flex-col bg-bg-base-default border border-bor-base-default rounded-lg shadow-sm flex-1 min-h-0">
 
-    <div class="flex flex-col flex-1 gap-2 min-h-0">
-        <table class="table-fixed w-full">
-            <thead>
-                <tr class="flex flex-row flex-1 items-center p-4 gap-4 border-b border-bor-base-default">
-                    @foreach ($columns as $column)
-                        <th class="flex-1 text-left text-sm font-semibold text-txt-base-primary">
-                            {{ $column }}
-                        </th>
-                    @endforeach
+    {{-- Header --}}
+    <div class="border-b border-bor-base-default">
+        <div class="grid items-center gap-4 p-4"
+             style="grid-template-columns: {{ $gridTemplate }};">
+            @foreach ($columns as $column)
+                <div class="text-left text-sm font-semibold text-txt-base-primary">
+                    {{ $column }}
+                </div>
+            @endforeach
 
-                    @if ($showCheckbox)
-                        <th class="shrink-0 w-6 flex items-center justify-center">
-                            <input type="checkbox" data-role="select-all" aria-label="Pilih semua"
-                                class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
-                        </th>
-                    @endif
+            @if ($showCheckbox)
+                <div class="flex items-center justify-center">
+                    <input type="checkbox" data-role="select-all" aria-label="Pilih semua"
+                           class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
+                </div>
+            @endif
 
-                    @if ($showActions)
-                        <th class="shrink-0 w-8"></th>
-                    @endif
-                </tr>
-            </thead>
-        </table>
-
-        <div class="flex-1 min-h-0 overflow-y-auto">
-            <table class="table-fixed w-full">
-                <tbody>
-                    @forelse($rows as $rowIndex => $row)
-                        <tr
-                            class="flex flex-row flex-1 gap-4 px-4 py-4 border-b border-bor-base-default last:border-b-0">
-                            @foreach ($row as $key => $cell)
-                                @continue($key === 'id')
-                                <td class="flex-1 text-justify text-sm leading-relaxed text-txt-base-primary">
-                                    {!! $cell !!}
-                                </td>
-                            @endforeach
-
-                            @if ($showCheckbox)
-                                <td class="shrink-0 w-6 flex items-start justify-center pt-1">
-                                    <input type="checkbox" name="{{ $checkboxName }}[]"
-                                        value="{{ $row['id'] ?? $rowIndex }}" data-role="row-checkbox"
-                                        class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
-                                </td>
-                            @endif
-
-                            @if ($showActions)
-                                <td class="shrink-0 w-8 flex flex-col items-center justify-end gap-2">
-                                    @if ($editRoute)
-                                        <a href="{{ route($editRoute, $row['id']) }}"
-                                            class="text-xs font-medium text-acc-base-default hover:underline">
-                                            Ubah
-                                        </a>
-                                    @endif
-
-                                    @if ($deleteRoute)
-                                        <form action="{{ route($deleteRoute, $row['id']) }}" method="POST"
-                                            onsubmit="return confirm('Yakin ingin menghapus data ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="text-xs font-medium text-red-600 hover:underline">
-                                                Hapus
-                                            </button>
-                                        </form>
-                                    @endif
-                                </td>
-                            @endif
-                        </tr>
-                    @empty
-                        <tr>
-                            <td class="px-4 py-6 text-center text-sm text-txt-base-secondary"
-                                colspan="{{ count($columns) + ($showCheckbox ? 1 : 0) + ($showActions ? 1 : 0) }}">
-                                Tidak ada data yang dapat ditampilkan.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            @if ($showActions)
+                <div class="text-left text-sm font-semibold text-txt-base-primary">
+                    {{-- bisa kosong atau isi "Aksi" --}}
+                </div>
+            @endif
         </div>
+    </div>
+
+    {{-- Body --}}
+    <div class="flex-1 min-h-0 overflow-y-auto">
+        @forelse($rows as $rowIndex => $row)
+            <div class="grid gap-4 px-4 py-4 border-b border-bor-base-default last:border-b-0"
+                 style="grid-template-columns: {{ $gridTemplate }};">
+
+                @foreach ($row as $key => $cell)
+                    @continue($key === 'id')
+                    <div class="text-left text-sm leading-relaxed text-txt-base-primary whitespace-normal break-words">
+                        {!! $cell !!}
+                    </div>
+                @endforeach
+
+                @if ($showCheckbox)
+                    <div class="flex items-start justify-center pt-1">
+                        <input type="checkbox" name="{{ $checkboxName }}[]"
+                               value="{{ $row['id'] ?? $rowIndex }}" data-role="row-checkbox"
+                               class="w-4 h-4 rounded border-bor-base-default text-acc-base-default focus:ring-acc-base-default">
+                    </div>
+                @endif
+
+                @if ($showActions)
+                    <div class="flex flex-col items-end justify-end gap-2">
+                        @if ($editRoute)
+                            <a href="{{ route($editRoute, $row['id']) }}"
+                               class="text-xs font-medium text-acc-base-default hover:underline">
+                                Ubah
+                            </a>
+                        @endif
+
+                        @if ($deleteRoute)
+                            <form action="{{ route($deleteRoute, $row['id']) }}" method="POST"
+                                  onsubmit="return confirm('Yakin ingin menghapus data ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="text-xs font-medium text-red-600 hover:underline">
+                                    Hapus
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
+            </div>
+        @empty
+            <div class="px-4 py-6 text-center text-sm text-txt-base-secondary">
+                Tidak ada data yang dapat ditampilkan.
+            </div>
+        @endforelse
     </div>
 </div>
 
