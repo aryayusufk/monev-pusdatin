@@ -56,6 +56,7 @@ class ActivityController extends Controller
             ->withQueryString();
 
         $columns = [
+            'IKU',
             'Kegiatan',
             'Tindak Lanjut',
             'Kendala',
@@ -75,8 +76,11 @@ class ActivityController extends Controller
                     '</a>';
             }
 
+            $ikuText = $act->ikus?->pluck('nama')->filter()->implode(', ');
+
             return [
                 'id' => $act->id,
+                'iku' => e($ikuText ?: '-'),
                 'kegiatan' => e($act->kegiatan),
                 'tindak_lanjut' => e($act->tindak_lanjut ?? '-'),
                 'kendala' => e($act->kendala ?? '-'),
@@ -764,7 +768,7 @@ class ActivityController extends Controller
             'monthName' => $start->translatedFormat('F'),
             'groups'    => $this->groupActivitiesByBidang($activities),
         ])->setPaper('a4', 'landscape')
-        ->download("Laporan-Monev-Bulanan-{$year}-{$month}.pdf");
+            ->download("Laporan-Monev-Bulanan-{$year}-{$month}.pdf");
     }
 
     public function monevQuarterlyExportRange(Request $request)
@@ -797,7 +801,7 @@ class ActivityController extends Controller
             'quarter' => $quarter,
             'groups'  => $this->groupActivitiesByBidang($activities),
         ])->setPaper('a4', 'landscape')
-        ->download("Laporan-Monev-Triwulan-{$year}-Q{$quarter}.pdf");
+            ->download("Laporan-Monev-Triwulan-{$year}-Q{$quarter}.pdf");
     }
 
 

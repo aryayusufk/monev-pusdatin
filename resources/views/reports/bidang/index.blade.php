@@ -1,6 +1,6 @@
 <x-app-layout>
 
-    <div class="flex flex-col p-6 gap-6 bg-bg-base-secondary h-dvh min-h-0 overflow-hidden h-dvh min-h-0 overflow-hidden">
+    <div class="flex flex-col w-full min-h-full p-6 gap-6 bg-bg-base-secondary">
         <div class="flex flex-row justify-between items-center w-full">
             <div class="flex grow">
                 <h1 class="text-2xl font-semibold text-acc-base-default">Laporan Bidang</h1>

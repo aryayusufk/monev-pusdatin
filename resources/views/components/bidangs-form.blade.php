@@ -45,12 +45,6 @@
 
         @if ($isEdit)
             <div class="flex flex-col gap-2 w-full">
-                <x-input-label for="kode" :value="__('Kode Bidang')" />
-                <x-text-input id="kode" class="block w-full" type="text" name="kode" :value="old('kode', $bidang->kode)"
-                    required autofocus autocomplete="off" />
-            </div>
-
-            <div class="flex flex-col gap-2 w-full">
                 <x-input-label for="nama" :value="__('Nama Bidang')" />
                 <x-text-input id="nama" class="block w-full" type="text" name="nama" :value="old('nama', $bidang->nama)"
                     required autofocus autocomplete="off" />
