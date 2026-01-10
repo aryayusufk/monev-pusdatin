@@ -17,7 +17,7 @@
     </div>
 
     <form action="{{ $isEdit ? route('bidangs.update', $bidang) : route('bidangs.store') }}" method="POST"
-        enctype="multipart/form-data" class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
+        enctype="multipart/form-data" class="flex flex-col w-full gap-6 text-sm font-normal text-txt-base-default">
         @csrf
         @if ($isEdit)
             @method('PUT')

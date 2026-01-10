@@ -15,7 +15,7 @@
     </div>
 
     <form action="{{ $user ? route('users.update', $user) : route('users.store') }}" method="POST" enctype="multipart/form-data"
-        class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
+        class="flex flex-col w-full gap-6 text-sm font-normal text-txt-base-default">
         @csrf
         @if ($user)
             @method('PUT')
