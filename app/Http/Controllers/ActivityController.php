@@ -458,6 +458,9 @@ class ActivityController extends Controller
         $ikus = $this->ikusQueryForRequest($request)->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
+        $bidangId = $request->input('bidang_id') ?? $request->user()?->bidang_id;
+        $bidang = $bidangId ? Bidang::find((int) $bidangId) : null;
+
         $cards = [];
         if (!empty($period) && !empty($value)) {
             if ($period === 'month') {
@@ -475,6 +478,7 @@ class ActivityController extends Controller
             'cards' => $cards,
             'ikus' => $ikus,
             'bidangs' => $bidangs,
+            'bidang' => $bidang,
         ]);
     }
 
@@ -505,6 +509,9 @@ class ActivityController extends Controller
         $ikus = $this->ikusQueryForRequest($request)->get();
         $bidangs = Bidang::orderBy('nama')->get();
 
+        $bidangId = $request->input('bidang_id') ?? $request->user()?->bidang_id;
+        $bidang = $bidangId ? Bidang::find((int) $bidangId) : null;
+
         // cards sama seperti laporan bidang (mingguan per bulan / bulanan per quarter)
         $cards = [];
         if (!empty($period) && !empty($value)) {
@@ -513,14 +520,6 @@ class ActivityController extends Controller
             } elseif ($period === 'quarter') {
                 $cards = $this->buildMonthCardsForQuarter($year, (int) $value);
             }
-        }
-
-        $scope = 'bidang';
-        if ($this->canUseGlobalScope($request)) {
-            $scope = $request->input('scope', 'bidang');
-        }
-        if (!in_array($scope, ['bidang', 'global'], true)) {
-            $scope = 'bidang';
         }
 
         // kirim ke view baru: reports.monev.index
@@ -532,8 +531,7 @@ class ActivityController extends Controller
             'cards' => $cards,
             'ikus' => $ikus,
             'bidangs' => $bidangs,
-            'scope' => $scope,
-            'canGlobal' => $this->canUseGlobalScope($request),
+            'bidang' => $bidang,
 
             // optional: jika view kamu butuh
             'filters' => $request->only(['year', 'period', 'value', 'iku_id', 'bidang_id', 'title']),

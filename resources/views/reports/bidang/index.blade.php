@@ -2,8 +2,21 @@
 
     <div class="flex flex-col w-full min-h-full p-6 gap-6 bg-bg-base-secondary">
         <div class="flex flex-row justify-between items-center w-full">
+            @php
+                $bidangName = $bidang?->nama ?? 'Bidang';
+
+                $periodWord = match (request('period')) {
+                    'month' => 'Mingguan',
+                    'quarter' => 'Bulanan',
+                    default => null,
+                };
+
+                // Jika period belum dipilih, fallback judul tetap "Laporan Bidang {Nama}"
+                $pageTitle = $periodWord ? "Laporan {$periodWord} {$bidangName}" : "Laporan Bidang {$bidangName}";
+            @endphp
+
             <div class="flex grow">
-                <h1 class="text-2xl font-semibold text-acc-base-default">Laporan Bidang</h1>
+                <h1 class="text-2xl font-semibold text-acc-base-default">{{ $pageTitle }}</h1>
             </div>
 
             <form action="{{ route('reports.bidang.index') }}" id="filter-form" method="GET"
