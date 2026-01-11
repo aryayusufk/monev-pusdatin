@@ -79,7 +79,7 @@
                         </x-nav-link>
                     @endcan
 
-                    @if (Gate::any(['config.iku', 'config.users', 'config.bidang', 'config.settings']))
+                    @if (Gate::any(['config.iku', 'config.users', 'config.bidang']))
                         <button type="button" @click="openKonfigurasi = !openKonfigurasi"
                             class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
                             <span>Konfigurasi</span>
