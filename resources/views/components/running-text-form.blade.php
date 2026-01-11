@@ -19,7 +19,7 @@
         </div>
     @endif
 
-    <form action="{{ route('settings.login_running_text.update') }}" method="POST"
+    <form action="{{ route('news.index.update') }}" method="POST"
         class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
         @csrf
 

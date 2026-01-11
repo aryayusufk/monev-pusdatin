@@ -84,6 +84,17 @@ export default {
                     'base-tertiary': '#',
                 }
             },
+
+            keyframes: {
+                'marquee-left': {
+                    '0%': { transform: 'translateX(0%)' },
+                    '100%': { transform: 'translateX(-50%)' },
+                },
+            },
+
+            animation: {
+                'marquee-left': 'marquee-left 7.5s linear infinite',
+            },
         },
     },
 

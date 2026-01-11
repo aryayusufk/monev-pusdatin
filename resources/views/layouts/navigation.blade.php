@@ -106,10 +106,10 @@
                                 </x-nav-link>
                             @endcan
 
-                            @can('config.iku')
-                                <x-nav-link :href="route('settings.login_running_text.edit')"
-                                    :active="request()->routeIs('settings.login_running_text.*')">
-                                    {{ __('Running Text') }}
+                            @can('config.news')
+                                <x-nav-link :href="route('news.index.edit')"
+                                    :active="request()->routeIs('news.index.*')">
+                                    {{ __('Manajemen Berita') }}
                                 </x-nav-link>
                             @endcan
                         </div>

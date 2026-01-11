@@ -1,26 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* ===== Running Text (Marquee) ===== */
-.marquee-track {
-    display: flex;
-    width: max-content;
-    will-change: transform;
-    animation: marquee-left 12s linear infinite;
-}
-
-.marquee-item {
-    white-space: nowrap;
-    padding-right: 2rem; /* kecil saja biar tidak ada gap panjang */
-}
-
-/* geser sejauh lebar copy pertama */
-@keyframes marquee-left {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}

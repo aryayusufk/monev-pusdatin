@@ -82,6 +82,15 @@ class AuthServiceProvider extends ServiceProvider
             ]);
         });
 
+        // Konfigurasi: Berita (super_admin, tim_monev, sekre_pimpinan)
+        Gate::define('config.news', function ($user) {
+            return $user->hasRole([
+                'super_admin',
+                'tim_monev',
+                'sekre_pimpinan',
+            ]);
+        });
+
         // Konfigurasi: Users (super_admin saja)
         Gate::define('config.users', function ($user) {
             return $user->hasRole('super_admin');
