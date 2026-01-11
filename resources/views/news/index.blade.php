@@ -1,7 +1,8 @@
 <x-app-layout>
     <div class="flex flex-col w-full min-h-full p-6 gap-6 items-center justify-center bg-bg-base-secondary">
-        <x-login-running-text-form
-            :title="'Pengaturan Running Text Login'"
+        <x-running-text-form
+            :title="'Manajemen Berita'"
+            :subtitle="'Atur teks yang akan ditampilkan pada halaman login.'"
             :buttonLabel="'Simpan Perubahan'"
             :enabled="$enabled"
             :content="$content"

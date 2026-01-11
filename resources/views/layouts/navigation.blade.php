@@ -25,7 +25,7 @@
 
                     @can('reports.bidang.view')
                         <button type="button" @click="openLaporanBidang = !openLaporanBidang"
-                            class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                            class="flex p-2 gap-2 text-center items-center justify-center text-sm font-normal text-txt-base-default transition duration-150 ease-in-out">
                             <span>Laporan Bidang</span>
                             <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
                                 x-bind:class="openLaporanBidang ? 'rotate-180' : ''" />
@@ -39,7 +39,7 @@
                                 </x-nav-link>
                             @empty
                                 <div
-                                    class="flex p-2 text-center items-center justify-center text-base font-normal text-acc-base-default">
+                                    class="flex p-2 text-center items-center justify-center text-sm font-normal text-acc-base-default">
                                     Belum ada bidang</div>
                             @endforelse
                         </div>
@@ -47,7 +47,7 @@
 
                     @can('reports.monev.view')
                         <button type="button" @click="openLaporanMonev = !openLaporanMonev"
-                            class="flex p-2 gap-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                            class="flex p-2 gap-2 text-center items-center justify-center text-sm font-normal text-txt-base-default transition duration-150 ease-in-out">
                             <span>Laporan Monitoring & Evaluasi</span>
                             <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
                                 x-bind:class="openLaporanMonev ? 'rotate-180' : ''" />
@@ -61,7 +61,7 @@
                                 </x-nav-link>
                             @empty
                                 <div
-                                    class="flex p-2 text-center items-center justify-center text-base font-normal text-acc-base-default">
+                                    class="flex p-2 text-center items-center justify-center text-sm font-normal text-acc-base-default">
                                     Belum ada bidang</div>
                             @endforelse
                         </div>
@@ -81,7 +81,7 @@
 
                     @if (Gate::any(['config.iku', 'config.users', 'config.bidang']))
                         <button type="button" @click="openKonfigurasi = !openKonfigurasi"
-                            class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
+                            class="flex p-2 text-center items-center justify-center text-sm font-normal text-txt-base-default transition duration-150 ease-in-out">
                             <span>Konfigurasi</span>
                             <x-heroicon-m-chevron-down class="w-[20px] h-[20px] transform transition"
                                 x-bind:class="openKonfigurasi ? 'rotate-180' : ''" />
@@ -106,10 +106,10 @@
                                 </x-nav-link>
                             @endcan
 
-                            @can('config.iku')
-                                <x-nav-link :href="route('settings.login_running_text.edit')"
-                                    :active="request()->routeIs('settings.login_running_text.*')">
-                                    {{ __('Running Text') }}
+                            @can('config.news')
+                                <x-nav-link :href="route('news.index.edit')"
+                                    :active="request()->routeIs('news.index.*')">
+                                    {{ __('Manajemen Berita') }}
                                 </x-nav-link>
                             @endcan
                         </div>

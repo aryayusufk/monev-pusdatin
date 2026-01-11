@@ -1,26 +1,25 @@
 @props([
-    'title' => 'Pengaturan Running Text Login',
-    'buttonLabel' => 'Simpan',
+    'title' => '',
+    'subtitle' => '',
+    'buttonLabel' => '',
     'enabled' => false,
     'content' => '',
 ])
 
 <div class="flex flex-col w-full p-6 gap-6 rounded-lg bg-bg-base-default border border-bor-base-default">
-    <div class="flex flex-row w-full justify-between">
-        <x-icon-button onclick="history.back()">
-            <x-heroicon-m-arrow-left class="w-[20px] h-auto" />
-        </x-icon-button>
+    <div class="flex flex-col w-full">
         <h1 class="text-2xl font-semibold text-acc-base-default">{{ $title }}</h1>
+        <p class="text-sm text-txt-base-default">{{ $subtitle }}</p>
     </div>
 
     @if (session('success'))
-        <div class="p-3 rounded bg-green-100 text-green-800">
+        <div class="p-3 rounded bg-green-100 text-green-600 text-sm">
             {{ session('success') }}
         </div>
     @endif
 
-    <form action="{{ route('settings.login_running_text.update') }}" method="POST"
-        class="flex flex-col w-full gap-6 text-base font-normal text-txt-base-default">
+    <form action="{{ route('news.index.update') }}" method="POST"
+        class="flex flex-col w-full gap-6 text-sm font-normal text-txt-base-default">
         @csrf
 
         <div class="flex flex-col gap-2 w-full">

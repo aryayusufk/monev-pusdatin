@@ -7,7 +7,7 @@ use App\Http\Controllers\IkuController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\SettingController;
+use App\Http\Controllers\NewsController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\Bidang;
@@ -53,15 +53,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Running Text Login (super_admin, tim_monev, sekre_pimpinan)
-    Route::get('/settings/login-running-text', [SettingController::class, 'editLoginRunningText'])
-        ->middleware('can:config.iku')
-        ->name('settings.login_running_text.edit');
-
-    Route::post('/settings/login-running-text', [SettingController::class, 'updateLoginRunningText'])
-        ->middleware('can:config.iku')
-        ->name('settings.login_running_text.update');
 
     /*
     |--------------------------------------------------------------------------
@@ -184,6 +175,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/logs', [SystemLogController::class, 'index'])
         ->middleware('can:activitylog.view')
         ->name('logs.index');
+
+    // Running Text Login (super_admin, tim_monev, sekre_pimpinan)
+    Route::get('/news/index', [NewsController::class, 'editRunningText'])
+        ->middleware('can:config.news')
+        ->name('news.index.edit');
+
+    Route::post('/news/index', [NewsController::class, 'updateRunningText'])
+        ->middleware('can:config.news')
+        ->name('news.index.update');
 });
 
 require __DIR__ . '/auth.php';
