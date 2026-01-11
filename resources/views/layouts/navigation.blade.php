@@ -105,6 +105,13 @@
                                     {{ __('Manajemen Bidang') }}
                                 </x-nav-link>
                             @endcan
+
+                            @can('config.iku')
+                                <x-nav-link :href="route('settings.login_running_text.edit')"
+                                    :active="request()->routeIs('settings.login_running_text.*')">
+                                    {{ __('Running Text') }}
+                                </x-nav-link>
+                            @endcan
                         </div>
                     @endif
                 </div>
