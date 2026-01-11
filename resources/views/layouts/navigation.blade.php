@@ -79,7 +79,7 @@
                         </x-nav-link>
                     @endcan
 
-                    @if (Gate::any(['config.iku', 'config.users', 'config.bidang']))
+                    @if (Gate::any(['config.iku', 'config.users', 'config.bidang', 'config.settings']))
                         <button type="button" @click="openKonfigurasi = !openKonfigurasi"
                             class="flex p-2 text-center items-center justify-center text-base font-normal text-txt-base-default transition duration-150 ease-in-out">
                             <span>Konfigurasi</span>
@@ -103,6 +103,13 @@
                             @can('config.bidang')
                                 <x-nav-link :href="route('bidangs.index')" :active="request()->routeIs('bidangs.index')">
                                     {{ __('Manajemen Bidang') }}
+                                </x-nav-link>
+                            @endcan
+
+                            @can('config.iku')
+                                <x-nav-link :href="route('settings.login_running_text.edit')"
+                                    :active="request()->routeIs('settings.login_running_text.*')">
+                                    {{ __('Running Text') }}
                                 </x-nav-link>
                             @endcan
                         </div>
