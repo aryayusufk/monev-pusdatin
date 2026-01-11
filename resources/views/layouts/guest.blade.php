@@ -29,6 +29,31 @@
             </a>
             {{ $slot }}
         </div>
+
+        @php
+            $enabledRaw = \App\Models\Setting::where('key', 'ui.login_running_text.enabled')->value('value');
+            $contentRaw = \App\Models\Setting::where('key', 'ui.login_running_text.content')->value('value');
+
+            $enabled = filter_var(
+                is_string($enabledRaw) ? $enabledRaw : json_encode($enabledRaw),
+                FILTER_VALIDATE_BOOLEAN
+            );
+
+            $content = is_string($contentRaw) ? trim($contentRaw, '"') : trim((string) $contentRaw, '"');
+        @endphp
+
+        @if ($enabled && $content !== '')
+            <div class="w-full sm:max-w-xs overflow-hidden bg-acc-base-default text-white rounded">
+                <div class="marquee-track">
+                    <span class="marquee-item font-extrabold text-lg tracking-wide">
+                        {{ $content }}
+                    </span>
+                    <span class="marquee-item font-extrabold text-lg tracking-wide" aria-hidden="true">
+                        {{ $content }}
+                    </span>
+                </div>
+            </div>
+        @endif
     </div>
 </body>
 
