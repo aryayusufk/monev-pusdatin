@@ -78,24 +78,29 @@
         }
 
         /* Column widths (sesuaikan bila perlu) */
+        th.col-iku,
+        td.col-iku {
+            width: 20%;
+        }
+
         th.col-kegiatan,
         td.col-kegiatan {
-            width: 32%;
+            width: 20%;
         }
 
         th.col-tindak,
         td.col-tindak {
-            width: 34%;
+            width: 20%;
         }
 
         th.col-kendala,
         td.col-kendala {
-            width: 17%;
+            width: 20%;
         }
 
         th.col-ket,
         td.col-ket {
-            width: 17%;
+            width: 20%;
         }
 
         /* Section row (Bidang) */
@@ -117,7 +122,7 @@
 <body>
 
     <div class="header-wrap text-center">
-        <p class="header-title">{{ strtoupper($title ?? 'WEEKLY SUMMARY') }}</p>
+        <p class="header-title">{{ strtoupper($title ?? 'QUARTERLY SUMMARY') }}</p>
         <p class="header-subtitle">PUSAT DATA DAN INFORMASI</p>
         <p class="header-subtitle">KEMENTERIAN LUAR NEGERI</p>
     </div>
@@ -129,6 +134,7 @@
     <table class="report">
         <thead>
             <tr>
+                <th class="col-iku">IKU</th>
                 <th class="col-kegiatan">Kegiatan</th>
                 <th class="col-tindak">Tindak Lanjut</th>
                 <th class="col-kendala">Kendala</th>
@@ -139,11 +145,12 @@
         <tbody>
             @forelse(($groups ?? []) as $bidangName => $items)
                 <tr class="section-row">
-                    <td colspan="4">{{ $bidangName }}</td>
+                    <td colspan="5">{{ $bidangName }}</td>
                 </tr>
 
                 @foreach ($items as $act)
                     <tr>
+                        <td class="col-iku">{{ $act->ikus?->pluck('nama')->filter()->implode(', ') ?: '-' }}</td>
                         <td class="col-kegiatan">{{ $act->kegiatan ?? '-' }}</td>
                         <td class="col-tindak">{{ $act->tindak_lanjut ?? '-' }}</td>
                         <td class="col-kendala">{{ $act->kendala ?? '-' }}</td>
@@ -152,7 +159,7 @@
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="4" class="text-center">Tidak ada data.</td>
+                    <td colspan="5" class="text-center">Tidak ada data.</td>
                 </tr>
             @endforelse
         </tbody>

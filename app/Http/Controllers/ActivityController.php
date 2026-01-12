@@ -169,6 +169,7 @@ class ActivityController extends Controller
             ->withQueryString();
 
         $columns = [
+            'IKU',
             'Kegiatan',
             'Tindak Lanjut',
             'Kendala',
@@ -188,8 +189,11 @@ class ActivityController extends Controller
                     '</a>';
             }
 
+            $ikuText = $act->ikus?->pluck('nama')->filter()->implode(', ');
+
             return [
                 'id' => $act->id,
+                'iku' => e($ikuText ?: '-'),
                 'kegiatan' => e($act->kegiatan),
                 'tindak_lanjut' => e($act->tindak_lanjut ?? '-'),
                 'kendala' => e($act->kendala ?? '-'),

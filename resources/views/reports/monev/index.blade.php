@@ -12,7 +12,7 @@
                 };
 
                 // Jika period belum dipilih, fallback judul tetap "Laporan Bidang {Nama}"
-                $pageTitle = $periodWord ? "Laporan {$periodWord} {$bidangName}" : "Laporan Bidang {$bidangName}";
+                $pageTitle = $periodWord ? "Laporan {$periodWord} {$bidangName}" : "Laporan Monitoring & Evaluasi Bidang {$bidangName}";
             @endphp
 
             <div class="flex grow">
