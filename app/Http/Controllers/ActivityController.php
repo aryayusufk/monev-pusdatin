@@ -729,7 +729,7 @@ class ActivityController extends Controller
         $activities = $query->orderBy('occurred_at')->get();
 
         $periode = $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y');
-        $title = $request->filled('title') ? mb_substr($request->title, 0, 80) : 'Laporan Monitoring & Evaluasi (Mingguan)';
+        $title = 'Laporan Monitoring & Evaluasi (Mingguan)';
 
         $pdf = Pdf::loadView('reports.bidang.weekly-pdf', [
             'title'   => $title,
