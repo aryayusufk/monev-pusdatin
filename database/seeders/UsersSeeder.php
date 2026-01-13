@@ -11,46 +11,57 @@ class UsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles   = DB::table('roles')->pluck('id', 'name');   // ['super_admin' => 1, ...]
-        $bidangs = DB::table('bidangs')->pluck('id', 'kode'); // ['BDG-DTKTI' => 1, ...]
+        $roles = DB::table('roles')->pluck('id', 'name');
 
-        // === 1) SUPER ADMIN ===
-        $sa = User::firstOrCreate(
+        /*
+        |--------------------------------------------------------------------------
+        | 1) SUPER ADMIN
+        |--------------------------------------------------------------------------
+        */
+        $superAdmin = User::updateOrCreate(
             ['username' => 'superadmin'],
             [
                 'name'      => 'Super Admin',
-                'password'  => Hash::make('password'),
+                'password'  => Hash::make('Sa@12345!'),
                 'is_active' => true,
                 'bidang_id' => null,
             ]
         );
-        $this->attachRoleIfMissing($sa, $roles['super_admin']);
 
-        // === 2) USER LEVEL PUSAT (TIDAK TERGANTUNG BIDANG) ===
+        $this->attachRoleIfMissing($superAdmin, $roles['super_admin']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2) USER LEVEL PUSAT (TANPA BIDANG)
+        |--------------------------------------------------------------------------
+        */
         $users = [
             [
                 'username' => 'tim_monev',
                 'name'     => 'Tim Monev',
                 'role'     => 'tim_monev',
+                'password' => 'Tm@12345!',
             ],
             [
                 'username' => 'sekre',
                 'name'     => 'Sekretaris Pimpinan',
                 'role'     => 'sekre_pimpinan',
+                'password' => 'Sk@12345!',
             ],
             [
                 'username' => 'pimpinan',
                 'name'     => 'Pimpinan',
                 'role'     => 'pimpinan',
+                'password' => 'Pm@12345!',
             ],
         ];
 
         foreach ($users as $u) {
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['username' => $u['username']],
                 [
                     'name'      => $u['name'],
-                    'password'  => Hash::make('password'),
+                    'password'  => Hash::make($u['password']),
                     'is_active' => true,
                     'bidang_id' => null,
                 ]
@@ -59,14 +70,12 @@ class UsersSeeder extends Seeder
             $this->attachRoleIfMissing($user, $roles[$u['role']]);
         }
 
-        // ❌ TIDAK membuat user_bidang dan monev_bidang di seeder.
-        // Mereka akan dibuat lewat UI oleh superadmin.
     }
 
-    private function attachRoleIfMissing(User $u, $roleId): void
+    private function attachRoleIfMissing(User $user, int $roleId): void
     {
-        if (! $u->roles()->where('role_id', $roleId)->exists()) {
-            $u->roles()->attach($roleId);
+        if (! $user->roles()->where('role_id', $roleId)->exists()) {
+            $user->roles()->attach($roleId);
         }
     }
 }
